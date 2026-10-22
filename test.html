@@ -835,10 +835,33 @@ function nlcRoute(o,t,base){
     if(ac)cands.sort(function(a,b){return hav(a,ac)-hav(b,ac)});
     if(cands[0]){hubs.unshift({d:{code:'',name:'(from LC type)'},P:cands[0]});s.satGuess=true}
   }
+  // the store's db_Store SEGMENT routes give the ORDER of the drops: pick the route that contains the hubs in SHIP TO
+  // (e.g. J339: "NDC JKT - HUB BKS JAMBI - HUB PEKANBARU - STORE" ↔ SHIP TO "H017 … JAMBI & H045 … PEKANBARU")
+  var cont=null,bestR=null;
+  if(hubs.length&&base&&base.routes&&!base.dcDest){
+    var best=-1e9;
+    base.routes.forEach(function(r,ri){
+      var pts=r.filter(function(x){return x.pt&&!x.store&&x.pt!==N.origin}).map(function(x){return x.pt});
+      var hit=hubs.filter(function(h){return pts.indexOf(h.P)>-1}).length,extra=pts.filter(function(p){return !hubs.some(function(h){return h.P===p})}).length;
+      var sc=hit*10-extra;if(hit&&sc>best){best=sc;bestR=ri}
+    });
+    if(bestR!=null){
+      var r=base.routes[bestR],pos=function(P){for(var k=0;k<r.length;k++)if(r[k].pt===P)return k;return 1e3};
+      hubs.sort(function(a,b){return pos(a.P)-pos(b.P)});
+      // drops that are not on this store's route belong to other stores on the same truck
+      s.otherDrops=hubs.filter(function(h){return pos(h.P)>=1e3}).map(function(h){return h.P.name});
+      s.allDrops=hubs.map(function(h){return h.P.name});
+      hubs=hubs.filter(function(h){return pos(h.P)<1e3});
+      var lastIn=-1;r.forEach(function(x,k){if(hubs.some(function(h){return h.P===x.pt}))lastIn=k});
+      cont=r.slice(lastIn+1);s.routeNo=bestR+1;
+    }
+  }
   var stops=[{label:org.name,pt:org}];
   hubs.forEach(function(h){stops.push({label:h.P.name+(/OTHER DC/i.test(s.scheme)&&h.P.type==='SITE'?' (satellite)':''),pt:h.P})});
-  var last=hubs.length?hubs[hubs.length-1].P:null,cont=null;
-  if(last&&base&&base.routes&&!base.dcDest)base.routes.some(function(r){var i=-1;r.forEach(function(x,k){if(x.pt===last)i=k});if(i>=0){cont=r.slice(i+1);return true}});
+  var last=hubs.length?hubs[hubs.length-1].P:null;
+  // more than one DC/hub drop in SHIP TO = multi-drop truck; this order leaves the truck at the last of them on its route
+  var allD=s.allDrops||hubs.map(function(h){return h.P.name});
+  if(allD.length>1&&last){s.multiDrop=allD;s.multiInOrder=!(s.otherDrops&&s.otherDrops.length);s.dropAt=last.name}
   if(cont&&cont.length){
     cont.forEach(function(x){stops.push(x.store?{label:'Store',store:true}:x)});
     s.destKind='store';s.store=base.store;s.city=base.city;s.pos=base.pos;s.lt=base.lt;s.days=base.days;s.destSite=base.site;
@@ -1089,7 +1112,7 @@ function showStore(s,keepView){
     '<div><span>Covered by</span><b>'+esc(s.direct?(NET.origin?NET.origin.name:'NDC JKT'):(titleCase(s.coverage)||'—'))+'</b></div></div>';
   if(s.direct)h+='<div class="nh"><div><b>H+0</b>Customer transaction</div><div><b>H+1</b>Order processed at NDC</div><div class="last"><b>H+2</b>Delivered to store / customer</div></div>';
   h+='<h2 class="sec" style="margin-top:12px">Route</h2>';
-  if(s.routes.length>1&&!NJ)h+='<div class="nroutes">'+s.routes.map(function(r,i){return '<button data-r="'+i+'" class="'+(i===NROUTE?'on':'')+'">Route '+(i+1)+(i?' (alternative)':'')+'</button>'}).join('')+'</div>';
+  if(s.routes.length>1&&!NJ)h+='<div class="nroutes">'+s.routes.map(function(r,i){var hb=r.filter(function(x){return x.pt&&!x.store&&x.pt!==NET.origin}).length;return '<button data-r="'+i+'" class="'+(i===NROUTE?'on':'')+'">Route '+(i+1)+(hb>1?' · multi-drop':i?' (alternative)':'')+'</button>'}).join('')+'</div>';
   h+='<div class="nchain">'+rt.map(function(x,i){
     var lbl=x.store?(s.dcDest?esc(titleCase(s.store)):esc(s.site)+' · Store / Cust'):esc(titleCase(x.label)),col=x.store?'#fff':NCOL[(x.pt&&x.pt.type)||'HUB'];
     return (i?'<span class="nar">→</span>':'')+'<span class="nstop'+(x.store?' end':'')+'"'+(x.pt&&!x.store?' data-p="'+NET.points.indexOf(x.pt)+'"':'')+'><i style="background:'+col+'"></i><em>'+(i+1)+'</em>'+lbl+'</span>';
@@ -1118,6 +1141,7 @@ function showJourney(s,keepView){
     var lbl=x.store?esc(ndest(s)):esc(titleCase(x.label)),col=x.store?'#fff':NCOL[(x.pt&&x.pt.type)||'HUB'];
     return (i?'<span class="nar">→</span>':'')+'<span class="nstop'+(x.store?' end':'')+'"'+(x.pt&&!x.store?' data-p="'+NET.points.indexOf(x.pt)+'"':'')+'><i style="background:'+col+'"></i><em>'+(i+1)+'</em>'+lbl+'</span>';
   }).join('')+'</div>';
+  if(s.multiDrop)h+='<div class="sub" style="margin-top:6px">🚚 Multi-drop truck: '+esc(s.multiDrop.map(titleCase).join(s.multiInOrder?' → ':', '))+'. This order is unloaded at <b>'+esc(titleCase(s.dropAt))+'</b>.</div>';
   if(s.threePL)h+='<div class="sub" style="margin-top:6px">Collected at DC '+esc(titleCase(String(J?J.o.dcName:'')))+' by '+esc(s.threePL)+' and delivered straight to the customer.</div>';
   if(s.others&&s.others.length)h+='<div class="sub" style="margin-top:6px">Same truck also drops at: '+esc(s.others.join(', '))+'.</div>';
   var hp=rt.filter(function(x){return x.pt&&!x.store&&x.pt.hubs.length&&x.pt.type!=='NDC'&&x.pt.type!=='SITE'}).slice(-1)[0];
