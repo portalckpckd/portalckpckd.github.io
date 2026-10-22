@@ -626,7 +626,7 @@ function orderDetail(o){
     '<h3 class="mono" style="font-size:16px">'+esc(o.orderkey)+'</h3><div class="sub mono">'+esc(o.ext)+'</div>'+tracker(o)+
     '<table class="kv" style="margin-top:8px"><tr><td>Store / Customer</td><td><b>'+esc(o.company)+'</b></td></tr>'+
     '<tr><td>Interface WMS</td><td>'+esc(o.orderDate||'-')+'</td></tr>'+
-    '<tr><td>Shipped</td><td>'+(o.shipped?esc(o.shipDate):'Not yet')+'</td></tr>'+(o.site?'<tr><td>Store Booking</td><td><span class="mono">'+esc(o.site)+'</span>'+(o.area?' · '+esc(o.area):'')+'</td></tr>':'')+'</table>'+truck+'<div id="jrn"></div>'+
+    '<tr><td>Shipped</td><td>'+(o.shipped?esc(o.shipDate):'Not yet')+'</td></tr>'+(o.site?'<tr><td>Store Booking</td><td>'+(o.siteName?'<b>'+esc(o.siteName)+'</b><div class="sub">':'')+'<span class="mono">'+esc(o.site)+'</span>'+(o.siteCity?' · '+esc(titleCase(o.siteCity)):'')+(o.area?' · '+esc(o.area):'')+(o.siteName?'</div>':'')+'</td></tr>':'')+'</table>'+truck+'<div id="jrn"></div>'+
     '<h2 class="sec" style="margin-top:12px">Items ('+(o.lines||[]).length+' SKU · total qty '+fmtQty(totalQ)+')</h2>'+
     '<table class="lines"><tr><th>SKU / Description</th><th class="q">'+(sh?'Shipped qty':'Ordered qty')+'</th></tr>'+lines+'</table></div>';
 }
@@ -856,12 +856,25 @@ function nlcRoute(o,t,base){
       cont=r.slice(lastIn+1);s.routeNo=bestR+1;
     }
   }
+  // multi-drop truck but the store's route does not name the drops: the order leaves the truck at the drop
+  // nearest to its booking store (Jambi store → Hub BKS Jambi); drops after it are other stores' goods
+  if(bestR==null&&hubs.length>1){
+    hubs.sort(function(a,b){return hav(org,a.P)-hav(org,b.P)});
+    s.allDrops=hubs.map(function(h){return h.P.name});
+    var home=base&&!base.dcDest&&base.pos?base.pos:null;
+    if(home){
+      var mi=0;hubs.forEach(function(h,k){if(hav(h.P,home)<hav(hubs[mi].P,home))mi=k});
+      s.otherDrops=hubs.slice(mi+1).map(function(h){return h.P.name});
+      hubs=hubs.slice(0,mi+1);
+    } else s.otherDrops=[];
+    s.multiGuessOrder=true;
+  }
   var stops=[{label:org.name,pt:org}];
   hubs.forEach(function(h){stops.push({label:h.P.name+(/OTHER DC/i.test(s.scheme)&&h.P.type==='SITE'?' (satellite)':''),pt:h.P})});
   var last=hubs.length?hubs[hubs.length-1].P:null;
   // more than one DC/hub drop in SHIP TO = multi-drop truck; this order leaves the truck at the last of them on its route
   var allD=s.allDrops||hubs.map(function(h){return h.P.name});
-  if(allD.length>1&&last){s.multiDrop=allD;s.multiInOrder=!(s.otherDrops&&s.otherDrops.length);s.dropAt=last.name}
+  if(allD.length>1&&last){s.multiDrop=allD;s.multiInOrder=!s.multiGuessOrder&&!(s.otherDrops&&s.otherDrops.length);s.dropAt=last.name}
   if(cont&&cont.length){
     cont.forEach(function(x){stops.push(x.store?{label:'Store',store:true}:x)});
     s.destKind='store';s.store=base.store;s.city=base.city;s.pos=base.pos;s.lt=base.lt;s.days=base.days;s.destSite=base.site;
@@ -881,7 +894,8 @@ function nlcRoute(o,t,base){
       var endP=via&&via!==org?via:last;
       if(via||endP.type==='HUB'||/^(HUB|OTHER DC)$/i.test(s.scheme)){
         // hubs and satellites (Other DC, e.g. Cikupa → Jababeka) consolidate and deliver to the customer
-        var ja=String(t.route||'').split(/\s*&\s*/)[0].trim(),jc=!via&&ja?(N.idx[nkey(ja)]||nresolve(N,ja,false)):null;
+        // multi-drop: the truck's JALUR lists every drop area ("Jambi & Panam"), so the customer area is the drop's own city
+        var ja=(s.allDrops&&s.allDrops.length>1)?'':String(t.route||'').split(/\s*&\s*/)[0].trim(),jc=!via&&ja?(N.idx[nkey(ja)]||nresolve(N,ja,false)):null;
         s.destKind='cust';s.store='Customer';s.viaHub=endP.name+(/OTHER DC/i.test(s.scheme)?' (satellite)':'');
         s.city=jc?ja:String(endP.name).replace(/^(HUB|SDC|RDC|NDC|DC)\s+(BKS\s+)?/i,'');
         s.pos=jc?{lat:jc.lat-0.04,lon:jc.lon+0.04}:{lat:endP.lat-0.05,lon:endP.lon+0.05};s.lt=base&&!base.dcDest?base.lt:'';
