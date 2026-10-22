@@ -52,6 +52,38 @@
   .dchip:hover{background:rgba(37,211,102,.28)}
   .dchip.nophone{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25)}
   .dchip.nophone svg{color:rgba(255,255,255,.7)}
+  /* campaign strip in the header */
+  #camp{margin-top:14px}#camp:empty{display:none}
+  .cstrip{display:flex;align-items:center;gap:12px;padding:9px 14px;border-radius:14px;color:#fff;position:relative;overflow:hidden;
+    background:linear-gradient(100deg,#0a4a96 0%,#0a4a96 50%,#0b7a3b 100%);border:1px solid rgba(255,255,255,.2)}
+  .cstrip::after{content:"";position:absolute;right:-40px;top:-30px;width:160px;height:120px;border-radius:50%;background:rgba(248,215,0,.18);pointer-events:none}
+  .cstrip>*{position:relative;z-index:1}
+  .cstrip.tap{cursor:pointer}.cstrip.tap:hover{filter:brightness(1.07)}
+  .cstrip .gps{font-size:26px;font-weight:900;letter-spacing:.03em;line-height:1;padding-right:12px;border-right:1px solid rgba(255,255,255,.25);color:#fff}
+  .cstrip .gps:empty{display:none}
+  .cstrip .t{flex:1;min-width:0}
+  .cstrip .t b{display:block;font-size:12px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;line-height:1.3}
+  .cstrip .chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px}
+  .cstrip .chips span{font-size:11px;font-weight:800;border-radius:999px;padding:2px 9px}
+  .cstrip .c0{background:#1e6fd9}.cstrip .c1{background:#f28c00}.cstrip .c2{background:#1a9b4a}
+  .cstrip .more{font-size:12px;font-weight:800;white-space:nowrap;color:var(--yellow)}
+  .cbanner{border-radius:14px;overflow:hidden}.cbanner img{display:block;width:100%;height:auto}
+  .lbox{position:fixed;inset:0;background:rgba(5,15,35,.88);display:flex;align-items:center;justify-content:center;z-index:10000;padding:16px;cursor:zoom-out}
+  .lbox img{max-width:100%;max-height:92vh;border-radius:12px}
+  .dcc .mapi{display:none}
+  /* phones: compact DC cards (address + "tap to WhatsApp" label hidden, Maps as an icon) */
+  @media (max-width:560px){
+    #camp{margin-top:12px}.cstrip{padding:8px 11px;gap:10px}.cstrip .gps{font-size:22px;padding-right:10px}.cstrip .t b{font-size:10.5px}
+    .cstrip .chips span{font-size:10.5px;padding:2px 8px}.cstrip .more{display:none}
+    .addr{gap:8px;margin-top:10px}
+    .dcc{padding:9px 12px 10px 15px;gap:6px;border-radius:12px}
+    .dcc .top{align-items:center}
+    .dcc .nm{font-size:15px;flex:1}
+    .dcc .live{font-size:10.5px}
+    .dcc .ln,.dcc .dlbl,.dcc .act{display:none}
+    .dcc .mapi{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#fff;color:var(--navy);flex:none;order:3}
+    .dchip{padding:4px 10px 4px 7px;font-size:12px}
+  }
   .notice{background:var(--warn);color:var(--warnT);border-left:4px solid var(--yellow);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:14px}
   nav{display:flex;gap:6px;margin:-34px 0 14px;overflow-x:auto;position:relative;z-index:2}
   nav button{box-shadow:0 6px 18px rgba(2,56,118,.12)}
@@ -272,6 +304,7 @@
     <span class="div"></span>
     <div><h1 id="dcName">DC Info</h1><p id="tagline"></p></div>
   </div>
+  <div id="camp"></div>
   <div class="addr" id="addr"></div>
 </div></header>
 
@@ -361,10 +394,11 @@ function init(d){
   if(c.LOGO_URL)$('logo').src=c.LOGO_URL;
   var on=function(v){return /^(y|yes|on|true|1)$/i.test(String(v||'').trim())},ks=['store receipt no. (e.g. UK5.1.20261015.9)','order no.'];
   if(on(c.SEARCH_BY_LC))ks.push('LC no.');if(on(c.SEARCH_BY_NAME))ks.push('store / customer name');
-  $('ordHint').textContent='Search by '+ks.slice(0,-1).join(', ')+(ks.length>1?' or ':'')+ks[ks.length-1]+'.';
+  var hint='Search by '+ks.slice(0,-1).join(', ')+(ks.length>1?' or ':'')+ks[ks.length-1];$('ordHint').textContent=/\.$/.test(hint)?hint:hint+'.';
   if(on(c.SEARCH_BY_LC))$('ordInput').placeholder='e.g. UK5.1.20261015.9 · 0005401708 · 261016C080';
   $('dcName').textContent=c.DC_NAME||'DC Info';try{if(API_URL)document.title=c.DC_NAME||'DC Info'}catch(e){}
   $('tagline').textContent=c.TAGLINE||'';
+  renderCampaign(c);
   renderDcCards(d.pic||{});
   renderStats(d.stats);
   if(c.NOTICE){$('notice').textContent='📢 '+c.NOTICE;$('notice').classList.remove('hidden')}
@@ -399,6 +433,24 @@ function dutyOf(x,c){
 }
 function startOf(s){return String(s&&s.time||'').split(/[–-]/)[0]}
 
+/** Campaign in the header (Config CAMPAIGN = strip | banner | off, CAMPAIGN_TITLE / _TEXT / _TAGS / _IMAGE) */
+function renderCampaign(c){
+  var box=$('camp');if(!box)return;
+  var mode=String(c.CAMPAIGN||'').trim().toLowerCase(),img=String(c.CAMPAIGN_IMAGE||'').trim();
+  // a normal Drive share link (…/file/d/<id>/view or …open?id=<id>) → Drive's direct image link
+  var dm=img.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?(?:export=\w+&)?id=)([\w-]{10,})/);
+  if(dm)img='https://drive.google.com/thumbnail?id='+dm[1]+'&sz=w1600';
+  if(!mode||mode==='off'||mode==='n'){box.innerHTML='';return}
+  if(mode==='banner'&&img){box.innerHTML='<div class="cbanner"><img src="'+esc(img)+'" alt="'+esc(c.CAMPAIGN_TITLE||'Campaign')+'"></div>'}
+  else{
+    var tags=String(c.CAMPAIGN_TAGS||'').split(/\s*[,;]\s*/).filter(Boolean);
+    box.innerHTML='<div class="cstrip'+(img?' tap':'')+'"><div class="gps">'+esc(c.CAMPAIGN_TITLE||'')+'</div><div class="t">'+
+      (c.CAMPAIGN_TEXT?'<b>'+esc(c.CAMPAIGN_TEXT)+'</b>':'')+
+      (tags.length?'<div class="chips">'+tags.map(function(t,i){return '<span class="c'+(i%3)+'">'+esc(t)+'</span>'}).join('')+'</div>':'')+
+      '</div>'+(img?'<div class="more">View ›</div>':'')+'</div>';
+  }
+  if(img)box.firstChild.onclick=function(){var d=document.createElement('div');d.className='lbox';d.innerHTML='<img src="'+esc(img)+'" alt="">';d.onclick=function(){d.remove()};document.body.appendChild(d)};
+}
 function renderDcCards(P){
   var c=contactShift(P),cur=c&&c.shift;
   $('addr').innerHTML=(P.dcs||[]).map(function(x){
@@ -410,6 +462,7 @@ function renderDcCards(P){
     }).join('');
     return '<div class="dcc">'+
       '<div class="top"><span class="nm"><small>DC</small>'+esc(x.name)+'</span>'+
+        (x.maps?'<a class="mapi" href="'+esc(x.maps)+'" target="_blank" rel="noopener" title="DC Maps" aria-label="DC Maps">'+IC.nav+'</a>':'')+
         (cur?(c.now?'<span class="live"><i></i>'+esc(cur.label)+' · '+esc(cur.time)+'</span>'
           :'<span class="live off"><i></i>Off hours · '+esc(cur.label)+' starts '+(c.day==='tomorrow'?'tomorrow ':'')+esc(startOf(cur))+'</span>'):'')+'</div>'+
       (x.address?'<div class="ln">'+IC.pin+'<span>'+esc(x.address)+'</span></div>':'')+
