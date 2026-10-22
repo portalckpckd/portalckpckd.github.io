@@ -525,6 +525,10 @@ var LAST={};
 function orderSearch(q,outId){
   q=String(q||'').trim();var out=$(outId);
   if(q.length<3){out.innerHTML='<div class="notice">Please type at least 3 characters.</div>';return}
+  // same rule as the server: when the text cannot be a receipt / order no., answer at once
+  var c=(DATA&&DATA.config)||{},on=function(v){return /^(y|yes|on|true|1)$/i.test(String(v||'').trim())},Q=q.toUpperCase();
+  var shapeOk=/^\d{5,14}$/.test(Q)||/^OD\./.test(Q)||(/\./.test(Q)&&/\d/.test(Q)&&/^[A-Z0-9.\-\/_]+$/.test(Q))||(on(c.SEARCH_BY_LC)&&/^\d{6}[A-Z]\d{2,4}$/.test(Q));
+  if(!shapeOk&&!on(c.SEARCH_BY_NAME)){out.innerHTML='<div class="notice">Please search with a receipt no. (e.g. UK5.1.20261015.9) or an order no. (e.g. 0005401708).</div>';return}
   out.innerHTML='<div class="muted">Searching…</div>';
   srv('searchOrders',[q],function(r){renderOrderResult(r,outId,q)},function(){out.innerHTML='<div class="notice">Search failed. Please try again.</div>'});
 }
