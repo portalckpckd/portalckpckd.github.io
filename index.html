@@ -574,7 +574,7 @@ function tracker(o){
 /** Sea delivery: an ISO shipping container no. (4 letters + 7 digits, e.g. TAKU6108050) or TRANSPORTTYPE = Sea */
 function isSea(t){return /^[A-Z]{4}\s?\d{6,7}$/i.test(String(t.unit||'').trim())||/^SEA$/i.test(String(t.transport||'').trim())}
 function truckBlock(t){
-  var drv=t.driver?esc(t.driver)+(t.driverPhone?' · <a href="https://wa.me/'+waNum(t.driverPhone)+'" target="_blank" rel="noopener">WA</a>':''):'';
+  var drv=t.driver?(t.driverPhone?picChip({name:t.driver,phone:t.driverPhone}):esc(t.driver)):'';
   var head='<div class="truck">🚚 <b class="mono">LC '+esc(t.si)+'</b>'+(t.dcName?' <span class="tag dc" style="margin-left:4px">DC '+esc(t.dcName)+'</span>':'');
   var grid=function(rows){rows=rows.filter(function(r){return r[1]});return rows.length?'<div class="g">'+rows.map(function(r){return '<span>'+r[0]+'</span><span>'+r[1]+'</span>'}).join('')+'</div>':''};
   if(isSea(t)){
@@ -626,7 +626,7 @@ function orderDetail(o){
     '<h3 class="mono" style="font-size:16px">'+esc(o.orderkey)+'</h3><div class="sub mono">'+esc(o.ext)+'</div>'+tracker(o)+
     '<table class="kv" style="margin-top:8px"><tr><td>Store / Customer</td><td><b>'+esc(o.company)+'</b></td></tr>'+
     '<tr><td>Interface WMS</td><td>'+esc(o.orderDate||'-')+'</td></tr>'+
-    '<tr><td>Shipped</td><td>'+(o.shipped?esc(o.shipDate):'Not yet')+'</td></tr>'+(o.site?'<tr><td>Store Booking</td><td><span class="mono">'+esc(o.site)+'</span>'+(o.area?' · '+esc(o.area):'')+'</td></tr>':'')+'</table>'+truck+'<div id="jrn"></div>'+
+    '<tr><td>Shipped</td><td>'+(o.shipped?esc(o.shipDate):'Not yet')+'</td></tr>'+(o.site?'<tr><td>Store Booking</td><td>'+(o.siteName?'<b>'+esc(o.siteName)+'</b><div class="sub">':'')+'<span class="mono">'+esc(o.site)+'</span>'+(o.siteCity?' · '+esc(titleCase(o.siteCity)):'')+(o.area?' · '+esc(o.area):'')+(o.siteName?'</div>':'')+'</td></tr>':'')+'</table>'+truck+'<div id="jrn"></div>'+
     '<h2 class="sec" style="margin-top:12px">Items ('+(o.lines||[]).length+' SKU · total qty '+fmtQty(totalQ)+')</h2>'+
     '<table class="lines"><tr><th>SKU / Description</th><th class="q">'+(sh?'Shipped qty':'Ordered qty')+'</th></tr>'+lines+'</table></div>';
 }
@@ -763,9 +763,26 @@ function fmtD(t){return t?new Date(t).toLocaleDateString('en-GB',{weekday:'short
  * next delivery day); DK = H+2 from the order date. The time is spread over the route legs by distance.
  * This is an estimate from db_Store, not GPS.
  */
+/** 3PL pickup written in the customer name ("DIAMBIL LALAMOVE", "ODS DELIVEREE"…) → service name, else '' */
+var TPL=[['LALAMOVE','Lalamove'],['DELIVEREE','Deliveree'],['GRABEXPRESS','Grab'],['GRAB EXPRESS','Grab'],['GRAB','Grab'],['GOSEND','GoSend'],['GO SEND','GoSend'],['GO-SEND','GoSend'],['GOBOX','GoBox'],['GO BOX','GoBox'],
+  ['PAXEL','Paxel'],['BORZO','Borzo'],['MAXIM','Maxim'],['INDRIVE','inDrive'],['DEKORUMA LOGISTIK','Dekoruma']];
+function detect3PL(company){var c=' '+String(company||'').toUpperCase().replace(/[^A-Z0-9]+/g,' ')+' ';
+  for(var i=0;i<TPL.length;i++)if(c.indexOf(' '+TPL[i][0]+' ')>-1)return TPL[i][1];return ''}
+/** Scenario: DC → customer, picked up at the DC by a 3PL (no truck of ours, no address in the data) */
+function n3plRoute(o,tp,base){
+  var N=NET,org=nsitePt(o.dc)||N.origin;if(!org)return null;var t=o.truck||{};
+  var m=String(t.si||'').toUpperCase().match(/^\d{6}([A-Z])/);
+  var s={jr:true,threePL:tp,site:String(o.site||'').toUpperCase(),scheme:t.shipType||'',lcClass:m?m[1]:'',lc:t.si||'',jalur:t.route||'',
+    area:o.area||(base&&base.area)||'',lt:'',days:'',store:'Customer',city:'',destKind:'cust',drops:[],missing:[],others:[],pos:null,
+    routes:[[{label:org.name,pt:org},{label:'Store',store:true}]]};
+  if(s.area!=='DK'&&base&&!base.dcDest)s.lt=base.lt;
+  return s;
+}
 function njourney(o){
   var N=NET,site=String(o.site||'').toUpperCase();
   var base=site?nbase(site,o):null;
+  var tp=detect3PL(o.company);
+  if(tp){var s3=n3plRoute(o,tp,base);if(s3)return nbuild(o,s3)}
   var lr=o.truck?nlcRoute(o,o.truck,base):null;
   // DK goes via hubs / other DCs / straight to the customer, so the booking store is not the destination:
   // without the truck's SHIP TO there is no honest route to draw
@@ -818,10 +835,46 @@ function nlcRoute(o,t,base){
     if(ac)cands.sort(function(a,b){return hav(a,ac)-hav(b,ac)});
     if(cands[0]){hubs.unshift({d:{code:'',name:'(from LC type)'},P:cands[0]});s.satGuess=true}
   }
+  // the store's db_Store SEGMENT routes give the ORDER of the drops: pick the route that contains the hubs in SHIP TO
+  // (e.g. J339: "NDC JKT - HUB BKS JAMBI - HUB PEKANBARU - STORE" ↔ SHIP TO "H017 … JAMBI & H045 … PEKANBARU")
+  var cont=null,bestR=null;
+  if(hubs.length&&base&&base.routes&&!base.dcDest){
+    var best=-1e9;
+    base.routes.forEach(function(r,ri){
+      var pts=r.filter(function(x){return x.pt&&!x.store&&x.pt!==N.origin}).map(function(x){return x.pt});
+      var hit=hubs.filter(function(h){return pts.indexOf(h.P)>-1}).length,extra=pts.filter(function(p){return !hubs.some(function(h){return h.P===p})}).length;
+      var sc=hit*10-extra;if(hit&&sc>best){best=sc;bestR=ri}
+    });
+    if(bestR!=null){
+      var r=base.routes[bestR],pos=function(P){for(var k=0;k<r.length;k++)if(r[k].pt===P)return k;return 1e3};
+      hubs.sort(function(a,b){return pos(a.P)-pos(b.P)});
+      // drops that are not on this store's route belong to other stores on the same truck
+      s.otherDrops=hubs.filter(function(h){return pos(h.P)>=1e3}).map(function(h){return h.P.name});
+      s.allDrops=hubs.map(function(h){return h.P.name});
+      hubs=hubs.filter(function(h){return pos(h.P)<1e3});
+      var lastIn=-1;r.forEach(function(x,k){if(hubs.some(function(h){return h.P===x.pt}))lastIn=k});
+      cont=r.slice(lastIn+1);s.routeNo=bestR+1;
+    }
+  }
+  // multi-drop truck but the store's route does not name the drops: the order leaves the truck at the drop
+  // nearest to its booking store (Jambi store → Hub BKS Jambi); drops after it are other stores' goods
+  if(bestR==null&&hubs.length>1){
+    hubs.sort(function(a,b){return hav(org,a.P)-hav(org,b.P)});
+    s.allDrops=hubs.map(function(h){return h.P.name});
+    var home=base&&!base.dcDest&&base.pos?base.pos:null;
+    if(home){
+      var mi=0;hubs.forEach(function(h,k){if(hav(h.P,home)<hav(hubs[mi].P,home))mi=k});
+      s.otherDrops=hubs.slice(mi+1).map(function(h){return h.P.name});
+      hubs=hubs.slice(0,mi+1);
+    } else s.otherDrops=[];
+    s.multiGuessOrder=true;
+  }
   var stops=[{label:org.name,pt:org}];
   hubs.forEach(function(h){stops.push({label:h.P.name+(/OTHER DC/i.test(s.scheme)&&h.P.type==='SITE'?' (satellite)':''),pt:h.P})});
-  var last=hubs.length?hubs[hubs.length-1].P:null,cont=null;
-  if(last&&base&&base.routes&&!base.dcDest)base.routes.some(function(r){var i=-1;r.forEach(function(x,k){if(x.pt===last)i=k});if(i>=0){cont=r.slice(i+1);return true}});
+  var last=hubs.length?hubs[hubs.length-1].P:null;
+  // more than one DC/hub drop in SHIP TO = multi-drop truck; this order leaves the truck at the last of them on its route
+  var allD=s.allDrops||hubs.map(function(h){return h.P.name});
+  if(allD.length>1&&last){s.multiDrop=allD;s.multiInOrder=!s.multiGuessOrder&&!(s.otherDrops&&s.otherDrops.length);s.dropAt=last.name}
   if(cont&&cont.length){
     cont.forEach(function(x){stops.push(x.store?{label:'Store',store:true}:x)});
     s.destKind='store';s.store=base.store;s.city=base.city;s.pos=base.pos;s.lt=base.lt;s.days=base.days;s.destSite=base.site;
@@ -841,7 +894,8 @@ function nlcRoute(o,t,base){
       var endP=via&&via!==org?via:last;
       if(via||endP.type==='HUB'||/^(HUB|OTHER DC)$/i.test(s.scheme)){
         // hubs and satellites (Other DC, e.g. Cikupa → Jababeka) consolidate and deliver to the customer
-        var ja=String(t.route||'').split(/\s*&\s*/)[0].trim(),jc=!via&&ja?(N.idx[nkey(ja)]||nresolve(N,ja,false)):null;
+        // multi-drop: the truck's JALUR lists every drop area ("Jambi & Panam"), so the customer area is the drop's own city
+        var ja=(s.allDrops&&s.allDrops.length>1)?'':String(t.route||'').split(/\s*&\s*/)[0].trim(),jc=!via&&ja?(N.idx[nkey(ja)]||nresolve(N,ja,false)):null;
         s.destKind='cust';s.store='Customer';s.viaHub=endP.name+(/OTHER DC/i.test(s.scheme)?' (satellite)':'');
         s.city=jc?ja:String(endP.name).replace(/^(HUB|SDC|RDC|NDC|DC)\s+(BKS\s+)?/i,'');
         s.pos=jc?{lat:jc.lat-0.04,lon:jc.lon+0.04}:{lat:endP.lat-0.05,lon:endP.lon+0.05};s.lt=base&&!base.dcDest?base.lt:'';
@@ -862,6 +916,7 @@ function nlcRoute(o,t,base){
   return s;
 }
 function ndest(s){
+  if(s.jr&&s.threePL)return 'Customer · via '+s.threePL;
   if(s.jr){if(s.destKind==='cust')return 'Customer · '+titleCase(s.city||'')+' area';
     if(s.destKind==='hub')return titleCase(s.store)+' (onward delivery)';
     return (s.destSite||s.site)+' · '+nstoreName(s)}
@@ -872,7 +927,8 @@ function nbuild(o,s){
   var lens=legs.map(function(g){return Math.max(hav(g.a,g.b),1)}),total=lens.reduce(function(a,b){return a+b},0)||1;
   var start=o.shipTs||0,eta=0,ltN=parseFloat(s.lt),now=Date.now();
   if(start){
-    if(!isFinite(ltN)&&s.area==='DK'){
+    if(s.threePL){var e3=new Date(start);e3.setHours(18,0,0,0);eta=Math.max(e3.getTime(),start+3*36e5)}   // instant courier: same day
+    else if(!isFinite(ltN)&&s.area==='DK'){
       // DK = H+2: order H+0, processed H+1, delivered H+2. Late/back orders: counted from shipping —
       // same day when the truck goes straight to the customer/store, +1 day via a hub or satellite (consolidation)
       var d=new Date(o.orderTs||start);d.setHours(18,0,0,0);d.setDate(d.getDate()+2);
@@ -905,6 +961,7 @@ function nbuild(o,s){
   if(!o.shipped)phase={k:'dc',txt:'At DC '+o.dcName+' · '+(o.status||'being prepared')};
   else if(!eta)phase={k:'go',txt:'Shipped · lead time not set in db_Store'};
   else if(frac>=1)phase={k:'done',txt:'Should have arrived by '+fmtD(eta)};
+  else if(s.threePL)phase=frac>=1?{k:'done',txt:'Should have been delivered by '+s.threePL+' · '+fmtD(eta)}:{k:'go',txt:'Picked up by '+s.threePL+' · on the way to the customer'};
   else if(dwelling)phase={k:'go',txt:'At '+titleCase(legs[leg].from.label)+' · consolidating for delivery'};
   else if(legs.length&&t<0.06&&leg>0)phase={k:'go',txt:'Around '+titleCase(legs[leg].from.label)};
   else if(legs.length)phase={k:'go',txt:'On the way: '+titleCase(legs[leg].from.label)+' → '+(legs[leg].toStore?(s.jr&&s.destKind==='cust'?'Customer ('+titleCase(s.city)+')':s.dcDest?titleCase(s.store):'Store / Cust'):titleCase(legs[leg].to.label))};
@@ -1069,7 +1126,7 @@ function showStore(s,keepView){
     '<div><span>Covered by</span><b>'+esc(s.direct?(NET.origin?NET.origin.name:'NDC JKT'):(titleCase(s.coverage)||'—'))+'</b></div></div>';
   if(s.direct)h+='<div class="nh"><div><b>H+0</b>Customer transaction</div><div><b>H+1</b>Order processed at NDC</div><div class="last"><b>H+2</b>Delivered to store / customer</div></div>';
   h+='<h2 class="sec" style="margin-top:12px">Route</h2>';
-  if(s.routes.length>1&&!NJ)h+='<div class="nroutes">'+s.routes.map(function(r,i){return '<button data-r="'+i+'" class="'+(i===NROUTE?'on':'')+'">Route '+(i+1)+(i?' (alternative)':'')+'</button>'}).join('')+'</div>';
+  if(s.routes.length>1&&!NJ)h+='<div class="nroutes">'+s.routes.map(function(r,i){var hb=r.filter(function(x){return x.pt&&!x.store&&x.pt!==NET.origin}).length;return '<button data-r="'+i+'" class="'+(i===NROUTE?'on':'')+'">Route '+(i+1)+(hb>1?' · multi-drop':i?' (alternative)':'')+'</button>'}).join('')+'</div>';
   h+='<div class="nchain">'+rt.map(function(x,i){
     var lbl=x.store?(s.dcDest?esc(titleCase(s.store)):esc(s.site)+' · Store / Cust'):esc(titleCase(x.label)),col=x.store?'#fff':NCOL[(x.pt&&x.pt.type)||'HUB'];
     return (i?'<span class="nar">→</span>':'')+'<span class="nstop'+(x.store?' end':'')+'"'+(x.pt&&!x.store?' data-p="'+NET.points.indexOf(x.pt)+'"':'')+'><i style="background:'+col+'"></i><em>'+(i+1)+'</em>'+lbl+'</span>';
@@ -1087,17 +1144,19 @@ function nscheme(s){return (s.lcClass?'LC '+s.lcClass+' · ':'')+(s.scheme||'')}
 /** Store card replacement when the route comes from the order's LC (Track Order → View on map). */
 function showJourney(s,keepView){
   var J=NJ,rt=s.routes[0],lt=nlt(s),days=ndays(s.days);
-  var kind=s.destKind==='cust'?(s.viaHub?'Via '+titleCase(s.viaHub)+' to customer':rt.length>2?'Via '+titleCase(rt[1].label)+' to customer':'Direct to customer'):s.destKind==='hub'?'To hub / DC':'To store';
+  var kind=s.threePL?'Picked up by '+s.threePL+' · direct to customer':s.destKind==='cust'?(s.viaHub?'Via '+titleCase(s.viaHub)+' to customer':rt.length>2?'Via '+titleCase(rt[1].label)+' to customer':'Direct to customer'):s.destKind==='hub'?'To hub / DC':'To store';
   var h='<div class="card"><div class="hd"><div><span class="tag '+(s.area==='DK'?'dk':'lk')+'">'+esc(s.area||'')+' · '+esc(kind)+'</span>'+
-    '<h3>'+esc(ndest(s))+'</h3><div class="sub">Order '+esc(J?J.o.orderkey:'')+' · LC <span class="mono">'+esc(s.lc||'')+'</span>'+(s.scheme?' · '+esc(nscheme(s)):'')+'</div></div>'+
+    '<h3>'+esc(ndest(s))+'</h3><div class="sub">Order '+esc(J?J.o.orderkey:'')+(s.lc?' · LC <span class="mono">'+esc(s.lc)+'</span>':'')+(s.lc&&s.scheme?' · '+esc(nscheme(s)):'')+'</div></div>'+
     '<button class="btn" data-close="1">✕</button></div>';
   if(J)h+='<div class="jmini"><div class="jtop"><div><b>'+esc(J.phase.txt)+'</b><div class="sub">Shipped '+esc(fmtD(J.start)||'—')+' · ETA '+esc(fmtD(J.eta)||'—')+'</div></div><div class="jpct">'+Math.round(J.frac*100)+'<small>%</small></div></div><div class="jbar"><i style="width:'+Math.round(J.frac*100)+'%"></i></div></div>';
-  h+='<div class="nkpi"><div><span>Lead time</span><b>'+esc(s.area==='DK'?NET.dkLt+' (DK)':lt.big)+'</b></div>'+(s.jalur?'<div><span>Truck route (JALUR)</span><b>'+esc(titleCase(s.jalur))+'</b></div>':'')+
+  h+='<div class="nkpi"><div><span>Lead time</span><b>'+esc(s.threePL?'Same day ('+s.threePL+')':s.area==='DK'?NET.dkLt+' (DK)':lt.big)+'</b></div>'+(s.jalur?'<div><span>Truck route (JALUR)</span><b>'+esc(titleCase(s.jalur))+'</b></div>':'')+
     (days?'<div><span>Delivery days</span><b>'+esc(days)+'</b></div>':'')+'<div><span>Booked at store</span><b>'+esc(s.site||'—')+'</b></div></div>';
   h+='<h2 class="sec" style="margin-top:12px">Route of this order</h2><div class="nchain">'+rt.map(function(x,i){
     var lbl=x.store?esc(ndest(s)):esc(titleCase(x.label)),col=x.store?'#fff':NCOL[(x.pt&&x.pt.type)||'HUB'];
     return (i?'<span class="nar">→</span>':'')+'<span class="nstop'+(x.store?' end':'')+'"'+(x.pt&&!x.store?' data-p="'+NET.points.indexOf(x.pt)+'"':'')+'><i style="background:'+col+'"></i><em>'+(i+1)+'</em>'+lbl+'</span>';
   }).join('')+'</div>';
+  if(s.multiDrop)h+='<div class="sub" style="margin-top:6px">🚚 Multi-drop truck: '+esc(s.multiDrop.map(titleCase).join(s.multiInOrder?' → ':', '))+'. This order is unloaded at <b>'+esc(titleCase(s.dropAt))+'</b>.</div>';
+  if(s.threePL)h+='<div class="sub" style="margin-top:6px">Collected at DC '+esc(titleCase(String(J?J.o.dcName:'')))+' by '+esc(s.threePL)+' and delivered straight to the customer.</div>';
   if(s.others&&s.others.length)h+='<div class="sub" style="margin-top:6px">Same truck also drops at: '+esc(s.others.join(', '))+'.</div>';
   var hp=rt.filter(function(x){return x.pt&&!x.store&&x.pt.hubs.length&&x.pt.type!=='NDC'&&x.pt.type!=='SITE'}).slice(-1)[0];
   if(hp)h+=hubContacts(hp.pt,'Contact '+titleCase(hp.pt.name));
