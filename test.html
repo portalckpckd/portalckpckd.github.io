@@ -71,6 +71,7 @@
   .lbox{position:fixed;inset:0;background:rgba(5,15,35,.88);display:flex;align-items:center;justify-content:center;z-index:10000;padding:16px;cursor:zoom-out}
   .lbox img{max-width:100%;max-height:92vh;border-radius:12px}
   .dcc .mapi{display:none}
+  .dcc .na{font-size:12.5px;color:rgba(255,255,255,.7)}
   /* phones: compact DC cards (address + "tap to WhatsApp" label hidden, Maps as an icon) */
   @media (max-width:560px){
     #camp{margin-top:12px}.cstrip{padding:8px 11px;gap:10px}.cstrip .gps{font-size:22px;padding-right:10px}.cstrip .t b{font-size:10.5px}
@@ -426,10 +427,15 @@ function contactShift(P){
   var first=(P.shiftsTomorrow||[]).slice().sort(function(a,b){return (start(a)||0)-(start(b)||0)})[0];
   return first?{shift:first,now:false,key:'groupsTomorrow',day:'tomorrow'}:null;
 }
+/** people shown on the header cards: Config HEADER_DUTY (division name, e.g. "Duty DC"), otherwise "Duty" / "Duty DC",
+ *  otherwise the first division whose name starts with "Duty" (not Duty Transport) */
 function dutyOf(x,c){
-  var list=[];
-  if(c)(x[c.key]||[]).forEach(function(g){if(/^duty$/i.test(g.division))list=g['s'+c.shift.id]||[]});
-  return list;
+  if(!c)return [];
+  var gs=x[c.key]||[],want=String((DATA&&DATA.config&&DATA.config.HEADER_DUTY)||'').trim().toUpperCase();
+  var pick=function(f){for(var i=0;i<gs.length;i++)if(f(String(gs[i].division).trim().toUpperCase()))return gs[i];return null};
+  var g=(want&&pick(function(d){return d===want}))||pick(function(d){return d==='DUTY'||d==='DUTY DC'})||
+    pick(function(d){return /^DUTY\b/.test(d)&&!/TRANSPORT/.test(d)});
+  return g?(g['s'+c.shift.id]||[]):[];
 }
 function startOf(s){return String(s&&s.time||'').split(/[–-]/)[0]}
 
@@ -467,7 +473,7 @@ function renderDcCards(P){
           :'<span class="live off"><i></i>Off hours · '+esc(cur.label)+' starts '+(c.day==='tomorrow'?'tomorrow ':'')+esc(startOf(cur))+'</span>'):'')+'</div>'+
       (x.address?'<div class="ln">'+IC.pin+'<span>'+esc(x.address)+'</span></div>':'')+
       (cur?'<div class="dlbl">'+(c.now?'On duty — tap to WhatsApp':'Next duty — tap to WhatsApp')+'</div>'+
-        (chips?'<div class="dchips">'+chips+'</div>':'<div class="ln"><span>Not assigned yet</span></div>'):'')+
+        (chips?'<div class="dchips">'+chips+'</div>':'<div class="na">No duty assigned yet</div>'):'')+
       (x.maps?'<div class="act"><a class="map" href="'+esc(x.maps)+'" target="_blank" rel="noopener">'+IC.nav+'DC Maps</a></div>':'')+
       '</div>';
   }).join('');
