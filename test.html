@@ -291,8 +291,8 @@
     <section id="t-order">
       <div class="card">
         <h3>Track your order</h3>
-        <p class="muted" style="margin:0 0 10px">Search by store receipt no. (e.g. UK5.1.20261015.9), order no., LC no., or store name.</p>
-        <div class="row"><input id="ordInput" placeholder="e.g. UK5.1.20261015.9 · 0005401708 · 261016C080" autocomplete="off"><button class="btn pri" id="ordBtn">Search</button></div>
+        <p class="muted" style="margin:0 0 10px" id="ordHint">Search by store receipt no. (e.g. UK5.1.20261015.9) or order no.</p>
+        <div class="row"><input id="ordInput" placeholder="e.g. UK5.1.20261015.9 · 0005401708" autocomplete="off"><button class="btn pri" id="ordBtn">Search</button></div>
       </div>
       <div id="stats" class="stats hidden"></div>
       <div id="ordOut" style="margin-top:10px"></div>
@@ -359,6 +359,10 @@ srv('getBootstrap',[],init,function(e){
 function init(d){
   DATA=d; var c=d.config||{};
   if(c.LOGO_URL)$('logo').src=c.LOGO_URL;
+  var on=function(v){return /^(y|yes|on|true|1)$/i.test(String(v||'').trim())},ks=['store receipt no. (e.g. UK5.1.20261015.9)','order no.'];
+  if(on(c.SEARCH_BY_LC))ks.push('LC no.');if(on(c.SEARCH_BY_NAME))ks.push('store / customer name');
+  $('ordHint').textContent='Search by '+ks.slice(0,-1).join(', ')+(ks.length>1?' or ':'')+ks[ks.length-1]+'.';
+  if(on(c.SEARCH_BY_LC))$('ordInput').placeholder='e.g. UK5.1.20261015.9 · 0005401708 · 261016C080';
   $('dcName').textContent=c.DC_NAME||'DC Info';try{if(API_URL)document.title=c.DC_NAME||'DC Info'}catch(e){}
   $('tagline').textContent=c.TAGLINE||'';
   renderDcCards(d.pic||{});
