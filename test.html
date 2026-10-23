@@ -77,13 +77,18 @@
     #camp{margin-top:12px}.cstrip{padding:8px 11px;gap:10px}.cstrip .gps{font-size:22px;padding-right:10px}.cstrip .t b{font-size:10.5px}
     .cstrip .chips span{font-size:10.5px;padding:2px 8px}.cstrip .more{display:none}
     .addr{gap:8px;margin-top:10px}
-    .dcc{padding:9px 12px 10px 15px;gap:6px;border-radius:12px}
-    .dcc .top{align-items:center}
-    .dcc .nm{font-size:15px;flex:1}
-    .dcc .live{font-size:10.5px}
+    /* one compact block: name + shift on the left, duty chips on the right, Maps icon at the end */
+    .dcc{display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"nm ch mp" "lv ch mp";column-gap:10px;row-gap:3px;
+      align-items:center;padding:10px 12px 10px 15px;border-radius:12px}
+    .dcc .top{display:contents}
+    .dcc .nm{grid-area:nm;font-size:15px;line-height:1.2}
+    .dcc .live{grid-area:lv;font-size:10.5px}
     .dcc .ln,.dcc .dlbl,.dcc .act{display:none}
-    .dcc .mapi{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#fff;color:var(--navy);flex:none;order:3}
-    .dchip{padding:4px 10px 4px 7px;font-size:12px}
+    .dcc .dchips,.dcc .na{grid-area:ch;justify-self:end;justify-content:flex-end;min-width:0}
+    .dcc .na{font-size:11.5px;text-align:right}
+    .dcc .mapi{grid-area:mp;display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;
+      background:#fff;color:var(--navy);text-decoration:none;font-size:10px;font-weight:900;line-height:1}
+    .dchip{padding:4px 10px 4px 7px;font-size:12px;max-width:150px}
   }
   .notice{background:var(--warn);color:var(--warnT);border-left:4px solid var(--yellow);border-radius:8px;padding:10px 14px;margin:12px 0;font-size:14px}
   nav{display:flex;gap:6px;margin:-34px 0 14px;overflow-x:auto;position:relative;z-index:2}
@@ -468,7 +473,8 @@ function renderDcCards(P){
     }).join('');
     return '<div class="dcc">'+
       '<div class="top"><span class="nm"><small>DC</small>'+esc(x.name)+'</span>'+
-        (x.maps?'<a class="mapi" href="'+esc(x.maps)+'" target="_blank" rel="noopener" title="DC Maps" aria-label="DC Maps">'+IC.nav+'</a>':'')+
+        (x.maps?'<a class="mapi" href="'+esc(x.maps)+'" target="_blank" rel="noopener" title="Open DC location in Maps" aria-label="Open DC location in Maps">'+
+          '<svg width="20" height="20" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 5.2 7 13 7 13s7-7.8 7-13a7 7 0 0 0-7-7z" fill="#e31e43"/><circle cx="12" cy="9" r="2.6" fill="#fff"/></svg></a>':'')+
         (cur?(c.now?'<span class="live"><i></i>'+esc(cur.label)+' · '+esc(cur.time)+'</span>'
           :'<span class="live off"><i></i>Off hours · '+esc(cur.label)+' starts '+(c.day==='tomorrow'?'tomorrow ':'')+esc(startOf(cur))+'</span>'):'')+'</div>'+
       (x.address?'<div class="ln">'+IC.pin+'<span>'+esc(x.address)+'</span></div>':'')+
