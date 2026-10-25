@@ -1922,7 +1922,7 @@ function overviewCard() {
  N.stores.forEach(function(s) {
   c[s.area === "DK" ? "DK" : "LK"]++;
  });
- return '<div class="card"><div class="nkpi"><div><span>Stores</span><b>' + N.stores.length + "</b></div><div><span>DK · direct " + esc(N.dkLt) + "</span><b>" + c.DK + "</b></div>" + "<div><span>LK · via transit DC</span><b>" + c.LK + "</b></div><div><span>DC &amp; hubs</span><b>" + hubs.length + "</b></div>" + (lts.length ? "<div><span>Longest lead time</span><b>" + Math.max.apply(null, lts) + " days</b></div>" : "") + "</div></div>";
+ return '<div class="card"><div class="nkpi"><div><span>Stores</span><b>' + N.stores.length + "</b></div><div><span>Dalam Kota</span><b>" + c.DK + "</b></div>" + "<div><span>Luar Kota</span><b>" + c.LK + "</b></div><div><span>DC &amp; hubs</span><b>" + hubs.length + "</b></div>" + (lts.length ? "<div><span>Longest lead time</span><b>" + Math.max.apply(null, lts) + " days</b></div>" : "") + "</div></div>";
 }
 
 function selStore(s, J) {
