@@ -869,6 +869,7 @@ var NPROV = /^(PROV(INSI)?\.?\s+)?(ACEH|NAD|SUMATERA|SUMATRA|SUMUT|SUMBAR|SUMSEL
 function prepNet(d) {
  var N = {
   codes: d.codes || {},
+  storeLoc: d.storeLoc || {},
   stores: d.stores || [],
   hubs: d.hubs || [],
   points: [],
@@ -916,9 +917,17 @@ function prepNet(d) {
   s.area = String(s.area || "").toUpperCase();
   N.bySite[String(s.site).toUpperCase()] = s;
   s.routes = nparse(N, s);
+  var ll = N.storeLoc[String(s.site).toUpperCase()];
+  if (ll) {
+   s.pos = {
+    lat: +ll[0],
+    lon: +ll[1]
+   };
+   s.exact = true;
+  }
   var prov = NPROV.test(String(s.city || "").toUpperCase().trim());
-  var c = prov ? null : N.idx[nkey(s.city)] || nresolve(N, s.city, false), atHub = false;
-  if (!c) {
+  var c = ll ? null : prov ? null : N.idx[nkey(s.city)] || nresolve(N, s.city, false), atHub = false;
+  if (!c && !ll) {
    var rt = s.routes[0] || [];
    for (var j = rt.length - 1; j >= 0; j--) if (rt[j].pt && rt[j].pt !== N.origin) {
     c = rt[j].pt;
@@ -926,7 +935,7 @@ function prepNet(d) {
     break;
    }
   }
-  if (!c && s.city && !prov) N.missingCity[String(s.city).toUpperCase()] = 1;
+  if (!c && !ll && s.city && !prov) N.missingCity[String(s.city).toUpperCase()] = 1;
   if (c) {
    var k = c.key, i = perCity[k] = (perCity[k] || 0) + 1, a = i * 2.399, r = (atHub ? .02 : 0) + (i > 1 ? .035 * Math.sqrt(i - 1) : 0);
    s.pos = {
