@@ -1073,6 +1073,21 @@ function nlegs(rt, s) {
  return out;
 }
 
+function narea(a) {
+ return a === "DK" ? "Dalam Kota" : a === "LK" ? "Luar Kota" : a || "";
+}
+
+function nvia(s) {
+ if (s.indep) return "Independent store";
+ var rt = s.routes && s.routes[0] || [], mids = rt.filter(function(x, i) {
+  return i > 0 && !x.store && !(x.pt && x.pt === NET.origin);
+ });
+ if (mids.length) return "Via " + mids.map(function(x) {
+  return titleCase(x.label);
+ }).join(" → ");
+ return s.area === "DK" ? "Direct or via hub" : "Direct";
+}
+
 function nlt(s) {
  if (s.area === "DK" && !s.lt) return {
   big: NET.dkLt,
@@ -1683,7 +1698,7 @@ function journeyHtml(J) {
 
 function renderNet() {
  var N = NET, h = "";
- h += '<div class="card"><h3>Delivery Network</h3><p class="muted" style="margin:0 0 10px">How goods travel from NDC to every store: route, transit DC, lead time and delivery days. Tap a store or a DC on the map.</p>' + '<div class="net-top"><div class="row nsearch"><input id="netQ" placeholder="Search store, site code, city or DC (e.g. J361, Medan, Sidoarjo)" autocomplete="off"><div class="nsug hidden" id="netSug"></div></div>' + '<div class="seg" id="netArea"><button data-a="ALL" class="on">All</button><button data-a="DK">DK</button><button data-a="LK">LK</button></div></div>' + (LOK ? '<div class="net-map" id="netMap"></div><div class="net-note" id="netNote"></div>' : '<div class="notice">The interactive map could not be loaded on this network — routes are shown as a list below.</div>') + "</div>";
+ h += '<div class="card"><h3>Delivery Network</h3><p class="muted" style="margin:0 0 10px">How goods travel from NDC to every store: route, transit DC, lead time and delivery days. Tap a store or a DC on the map.</p>' + '<div class="net-top"><div class="row nsearch"><input id="netQ" placeholder="Search store, site code, city or DC (e.g. J361, Medan, Sidoarjo)" autocomplete="off"><div class="nsug hidden" id="netSug"></div></div>' + '<div class="seg" id="netArea"><button data-a="ALL" class="on">All</button><button data-a="DK">Dalam Kota</button><button data-a="LK">Luar Kota</button></div></div>' + (LOK ? '<div class="net-map" id="netMap"></div><div class="net-note" id="netNote"></div>' : '<div class="notice">The interactive map could not be loaded on this network — routes are shown as a list below.</div>') + "</div>";
  if (N.error) h += '<div class="notice">' + esc(N.error) + "</div>";
  h += '<div id="netPanel" class="npanel"></div><h2 class="sec" id="netCount">Stores</h2><div class="nlist" id="netList"></div>';
  $("netOut").innerHTML = h;
@@ -1890,7 +1905,7 @@ function netStores() {
 
 function storeRow(s) {
  var lt = nlt(s), i = NET.stores.indexOf(s);
- return '<button class="nrow' + (s === NSEL ? " on" : "") + '" data-i="' + i + '"><span class="s">' + esc(s.site) + '</span><span class="n"><div><b>' + esc(nstoreName(s)) + "</b></div>" + '<div class="sub">' + esc(titleCase(s.city)) + (s.type ? " · " + esc(s.type) : "") + " · " + (s.direct ? "Direct from NDC" : esc(titleCase(s.coverage) || "—")) + "</div></span>" + '<span class="lt"><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '" style="margin:0">' + esc(s.area || "—") + "</span><small>" + esc(lt.big) + "</small></span></button>";
+ return '<button class="nrow' + (s === NSEL ? " on" : "") + '" data-i="' + i + '"><span class="s">' + esc(s.site) + '</span><span class="n"><div><b>' + esc(nstoreName(s)) + "</b></div>" + '<div class="sub">' + esc(titleCase(s.city)) + (s.type ? " · " + esc(s.type) : "") + " · " + (s.direct ? "Direct or via hub" : esc(titleCase(s.coverage) || "—")) + "</div></span>" + '<span class="lt"><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '" style="margin:0">' + esc(s.area || "—") + "</span><small>" + esc(lt.big) + "</small></span></button>";
 }
 
 function renderNetList() {
@@ -1945,7 +1960,7 @@ function showStore(s, keepView) {
  var cov = s.direct ? null : (rt.filter(function(x) {
   return x.pt && !x.store && x.pt !== NET.origin;
  }).slice(-1)[0] || {}).pt;
- var h = '<div class="card"><div class="hd"><div><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '">' + esc(s.area || "") + (s.area === "DK" ? " · Direct" : s.indep ? " · Independent store" : " · Via transit DC") + "</span>" + "<h3>" + esc(nstoreName(s)) + '</h3><div class="sub"><span class="mono">' + esc(s.site) + "</span>" + (s.legacy ? " · Legacy " + esc(s.legacy) : "") + (s.city ? " · " + esc(titleCase(s.city)) : "") + (s.type ? " · " + esc(s.type) : "") + "</div></div>" + '<button class="btn" data-close="1">✕</button></div>';
+ var h = '<div class="card"><div class="hd"><div><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '">' + esc(narea(s.area)) + " · " + esc(nvia(s)) + "</span>" + "<h3>" + esc(nstoreName(s)) + '</h3><div class="sub"><span class="mono">' + esc(s.site) + "</span>" + (s.legacy ? " · Legacy " + esc(s.legacy) : "") + (s.city ? " · " + esc(titleCase(s.city)) : "") + (s.type ? " · " + esc(s.type) : "") + "</div></div>" + '<button class="btn" data-close="1">✕</button></div>';
  if (NJ) h += '<div class="jmini"><div class="jtop"><div><b>' + esc(NJ.phase.txt) + '</b><div class="sub">Order ' + esc(NJ.o.orderkey) + " · shipped " + esc(fmtD(NJ.start) || "—") + " · ETA " + esc(fmtD(NJ.eta) || "—") + '</div></div><div class="jpct">' + Math.round(NJ.frac * 100) + '<small>%</small></div></div><div class="jbar"><i style="width:' + Math.round(NJ.frac * 100) + '%"></i></div></div>';
  h += '<div class="nkpi"><div><span>Lead time</span><b>' + esc(lt.big) + "</b></div><div><span>Delivery days</span><b>" + esc(days || (s.direct ? "Every day" : "—")) + "</b></div>" + "<div><span>Covered by</span><b>" + esc(s.direct ? NET.origin ? NET.origin.name : "NDC JKT" : titleCase(s.coverage) || "—") + "</b></div></div>";
  if (s.direct) h += '<div class="nh"><div><b>H+0</b>Customer transaction</div><div><b>H+1</b>Order processed at NDC</div><div class="last"><b>H+2</b>Delivered to store / customer</div></div>';
@@ -1979,7 +1994,7 @@ function nscheme(s) {
 function showJourney(s, keepView) {
  var J = NJ, rt = s.routes[0], lt = nlt(s), days = ndays(s.days);
  var kind = s.threePL ? "Picked up by " + s.threePL + " · direct to customer" : s.destKind === "cust" ? s.viaHub ? "Via " + titleCase(s.viaHub) + " to customer" : rt.length > 2 ? "Via " + titleCase(rt[1].label) + " to customer" : "Direct to customer" : s.destKind === "hub" ? "To hub / DC" : "To store";
- var h = '<div class="card"><div class="hd"><div><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '">' + esc(s.area || "") + " · " + esc(kind) + "</span>" + "<h3>" + esc(ndest(s)) + '</h3><div class="sub">Order ' + esc(J ? J.o.orderkey : "") + (s.lc ? ' · LC <span class="mono">' + esc(s.lc) + "</span>" : "") + (s.lc && s.scheme ? " · " + esc(nscheme(s)) : "") + "</div></div>" + '<button class="btn" data-close="1">✕</button></div>';
+ var h = '<div class="card"><div class="hd"><div><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '">' + esc(narea(s.area)) + " · " + esc(kind) + "</span>" + "<h3>" + esc(ndest(s)) + '</h3><div class="sub">Order ' + esc(J ? J.o.orderkey : "") + (s.lc ? ' · LC <span class="mono">' + esc(s.lc) + "</span>" : "") + (s.lc && s.scheme ? " · " + esc(nscheme(s)) : "") + "</div></div>" + '<button class="btn" data-close="1">✕</button></div>';
  if (J) h += '<div class="jmini"><div class="jtop"><div><b>' + esc(J.phase.txt) + '</b><div class="sub">Shipped ' + esc(fmtD(J.start) || "—") + " · ETA " + esc(fmtD(J.eta) || "—") + '</div></div><div class="jpct">' + Math.round(J.frac * 100) + '<small>%</small></div></div><div class="jbar"><i style="width:' + Math.round(J.frac * 100) + '%"></i></div></div>';
  h += '<div class="nkpi"><div><span>Lead time</span><b>' + esc(s.threePL ? "Same day (" + s.threePL + ")" : s.area === "DK" ? NET.dkLt + " (DK)" : lt.big) + "</b></div>" + (s.jalur ? "<div><span>Truck route (JALUR)</span><b>" + esc(titleCase(s.jalur)) + "</b></div>" : "") + (days ? "<div><span>Delivery days</span><b>" + esc(days) + "</b></div>" : "") + "<div><span>Booked at store</span><b>" + esc(s.site || "—") + "</b></div></div>";
  h += '<h2 class="sec" style="margin-top:12px">Route of this order</h2><div class="nchain">' + rt.map(function(x, i) {
