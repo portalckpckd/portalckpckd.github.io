@@ -904,6 +904,13 @@ function prepNet(d) {
  N.origin = N.idx["NDC JKT"] || N.idx["JKT"] || N.points.filter(function(p) {
   return p.type === "NDC";
  })[0] || null;
+ var ck = N.idx["DC CIKUPA"];
+ if (N.origin && ck && ck !== N.origin) {
+  N.cikupa = ck;
+  N.origin.lat = ck.lat;
+  N.origin.lon = ck.lon;
+  N.origin.name = ck.name;
+ }
  N.hubs.forEach(function(h) {
   var P = nresolve(N, h.name, true);
   if (P) {
@@ -991,6 +998,7 @@ function nparse(N, s) {
     }).filter(Boolean).map(function(t) {
      if (/STORE|CUST|TOKO/i.test(t)) return storeStop();
      var P = nresolve(N, t, true);
+     if (P && P === N.cikupa) P = N.origin;
      if (!P) {
       var m = t.toUpperCase().match(/^\s*(HUB|SDC|RDC|NDC|DC)\s+(?:BKS\s+)?(.+)$/), c = m && nresolve(N, m[2], false);
       if (c) P = nvirtual(N, t, m[1], c);
@@ -1085,7 +1093,7 @@ function nvia(s) {
  if (mids.length) return "Via " + mids.map(function(x) {
   return titleCase(x.label);
  }).join(" → ");
- return s.area === "DK" ? "Direct or via hub" : "Direct";
+ return s.direct ? "Direct or via hub" : "Direct";
 }
 
 function nlt(s) {
@@ -1905,7 +1913,7 @@ function netStores() {
 
 function storeRow(s) {
  var lt = nlt(s), i = NET.stores.indexOf(s);
- return '<button class="nrow' + (s === NSEL ? " on" : "") + '" data-i="' + i + '"><span class="s">' + esc(s.site) + '</span><span class="n"><div><b>' + esc(nstoreName(s)) + "</b></div>" + '<div class="sub">' + esc(titleCase(s.city)) + (s.type ? " · " + esc(s.type) : "") + " · " + (s.direct ? "Direct or via hub" : esc(titleCase(s.coverage) || "—")) + "</div></span>" + '<span class="lt"><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '" style="margin:0">' + esc(s.area || "—") + "</span><small>" + esc(lt.big) + "</small></span></button>";
+ return '<button class="nrow' + (s === NSEL ? " on" : "") + '" data-i="' + i + '"><span class="s">' + esc(s.site) + '</span><span class="n"><div><b>' + esc(nstoreName(s)) + "</b></div>" + '<div class="sub">' + esc(titleCase(s.city)) + (s.type ? " · " + esc(s.type) : "") + " · " + (s.area === "DK" ? esc(nvia(s)) : esc(titleCase(s.coverage) || "—")) + "</div></span>" + '<span class="lt"><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '" style="margin:0">' + esc(s.area || "—") + "</span><small>" + esc(lt.big) + "</small></span></button>";
 }
 
 function renderNetList() {
@@ -1962,8 +1970,8 @@ function showStore(s, keepView) {
  }).slice(-1)[0] || {}).pt;
  var h = '<div class="card"><div class="hd"><div><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '">' + esc(narea(s.area)) + " · " + esc(nvia(s)) + "</span>" + "<h3>" + esc(nstoreName(s)) + '</h3><div class="sub"><span class="mono">' + esc(s.site) + "</span>" + (s.legacy ? " · Legacy " + esc(s.legacy) : "") + (s.city ? " · " + esc(titleCase(s.city)) : "") + (s.type ? " · " + esc(s.type) : "") + "</div></div>" + '<button class="btn" data-close="1">✕</button></div>';
  if (NJ) h += '<div class="jmini"><div class="jtop"><div><b>' + esc(NJ.phase.txt) + '</b><div class="sub">Order ' + esc(NJ.o.orderkey) + " · shipped " + esc(fmtD(NJ.start) || "—") + " · ETA " + esc(fmtD(NJ.eta) || "—") + '</div></div><div class="jpct">' + Math.round(NJ.frac * 100) + '<small>%</small></div></div><div class="jbar"><i style="width:' + Math.round(NJ.frac * 100) + '%"></i></div></div>';
- h += '<div class="nkpi"><div><span>Lead time</span><b>' + esc(lt.big) + "</b></div><div><span>Delivery days</span><b>" + esc(days || (s.direct ? "Every day" : "—")) + "</b></div>" + "<div><span>Covered by</span><b>" + esc(s.direct ? NET.origin ? NET.origin.name : "NDC JKT" : titleCase(s.coverage) || "—") + "</b></div></div>";
- if (s.direct) h += '<div class="nh"><div><b>H+0</b>Customer transaction</div><div><b>H+1</b>Order processed at NDC</div><div class="last"><b>H+2</b>Delivered to store / customer</div></div>';
+ h += '<div class="nkpi"><div><span>Lead time</span><b>' + esc(lt.big) + "</b></div><div><span>Delivery days</span><b>" + esc(days || (s.area === "DK" ? "Every day" : "—")) + "</b></div>" + "<div><span>Covered by</span><b>" + esc(s.coverage && !s.direct ? titleCase(s.coverage) : cov ? titleCase(cov.name) : s.area === "DK" || s.direct ? titleCase(NET.origin ? NET.origin.name : "DC Cikupa") : "—") + "</b></div></div>";
+ if (s.area === "DK") h += '<div class="nh"><div><b>H+0</b>Customer transaction</div><div><b>H+1</b>Order processed at NDC</div><div class="last"><b>H+2</b>Delivered to store / customer</div></div>';
  h += '<h2 class="sec" style="margin-top:12px">Route</h2>';
  if (s.routes.length > 1 && !NJ) h += '<div class="nroutes">' + s.routes.map(function(r, i) {
   return '<button data-r="' + i + '" class="' + (i === NROUTE ? "on" : "") + '">Route ' + (i + 1) + (i ? " (alternative)" : "") + "</button>";
@@ -1980,7 +1988,7 @@ function showStore(s, keepView) {
   return esc(x.label);
  }).join(", ") + " (add to Map Points).</div>";
  if (s.dsm && s.dsm.length) h += '<div class="nhub"><h2 class="sec" style="margin:0 0 8px">Duty Store Manager</h2><div class="pppl">' + s.dsm.map(picChip).join("") + "</div></div>";
- var hp = cov || (s.direct || s.indep ? NET.origin : null);
+ var hp = cov || (s.direct || s.indep || s.area === "DK" ? NET.origin : null);
  if (hp && hp.hubs.length) h += hubContacts(hp, "Contact " + titleCase(hp.name));
  h += "</div>";
  $("netPanel").innerHTML = h;
