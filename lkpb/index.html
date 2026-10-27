@@ -87,6 +87,33 @@ button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:10px 18p
 .item .l2{margin-top:4px;font-size:13.5px}
 .item .l3{margin-top:3px;font-size:12.5px;color:var(--muted)}
 .empty{color:var(--muted);padding:12px 2px}
+/* case table */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;flex-wrap:wrap}
+.seg button{border-radius:0;background:#fff;color:var(--navy);padding:7px 12px;font-size:13px;box-shadow:none;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--navy);color:#fff}
+.filters .sp{flex:1}
+label.per{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted);flex-wrap:wrap}
+.savebar{display:flex;align-items:center;gap:8px;background:var(--warn);color:var(--warnT);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-weight:700;font-size:13.5px;position:sticky;top:6px;z-index:5}
+.tblwrap{overflow:auto;max-height:70vh;border:1px solid var(--line);border-radius:10px}
+table.grid-t{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:100%}
+.grid-t th{position:sticky;top:0;z-index:2;background:var(--navy);color:#fff;font-weight:700;text-align:left;padding:8px 8px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.15)}
+.grid-t th.m-DEC{background:#d9d9d9;color:var(--text)} .grid-t th.m-TUGU{background:#38761d} .grid-t th.m-EX{background:#990000}
+.grid-t td{padding:4px 8px;border-bottom:1px solid var(--line);border-right:1px solid #eef1f6;white-space:nowrap;vertical-align:middle;background:#fff;max-width:260px;overflow:hidden;text-overflow:ellipsis}
+.grid-t tr:hover td{background:#fbfcfe}
+.grid-t tr.dirty td{background:#fffbe0}
+.grid-t td.fix{position:sticky;z-index:1}
+.grid-t th.fix{position:sticky;z-index:3}
+.grid-t .c0{left:0;width:214px;min-width:214px;max-width:214px}.grid-t .c1{left:214px;min-width:180px;box-shadow:2px 0 0 var(--line)}
+.grid-t td.m{background:#fffdf3;padding:2px 4px}
+.grid-t tr.dirty td.m{background:#fff6c2}
+.grid-t td.m select,.grid-t td.m input{font:inherit;font-size:12.5px;padding:5px 6px;border:1px solid transparent;border-radius:6px;background:transparent;min-width:120px;width:100%}
+.grid-t td.m input[type=date]{min-width:130px}
+.grid-t td.m select:hover,.grid-t td.m input:hover{border-color:var(--line);background:#fff}
+.grid-t td.m select:focus,.grid-t td.m input:focus{border-color:var(--navy2);background:#fff}
+.grid-t td.m .chg{border-color:#e0b400;background:#fff}
+.grid-t a.id{font-weight:800;color:var(--navy);text-decoration:none;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.grid-t a.id:hover{text-decoration:underline}
 /* modal */
 .ovl{position:fixed;inset:0;background:rgba(20,33,61,.45);display:flex;justify-content:flex-end;z-index:20}
 .drawer{background:var(--bg);width:min(720px,100%);height:100%;overflow:auto;display:flex;flex-direction:column}
@@ -186,14 +213,29 @@ svg text{font-family:inherit}
     <!-- KASUS -->
     <section id="v-cases" class="hidden">
       <div class="card">
-        <div class="queues" id="queues"></div>
         <div class="filters">
-          <input type="text" id="q" placeholder="Cari LKPB, DO, No Tugu, SKU, store, customer…" oninput="renderCases()">
-          <select id="cDc" onchange="renderCases()"><option value="">Semua DC</option><option>Cikupa</option><option>Cikande</option></select>
+          <div class="seg" id="presets"></div>
+          <span class="sp"></span>
+          <div class="seg" id="modeSeg"><button data-m="table" class="on">Tabel</button><button data-m="cards">Kartu</button></div>
+        </div>
+        <div class="filters">
+          <label class="per">Periode
+            <select id="pField" onchange="savePrefs();renderCases()"><option value="created">Created LKPB</option><option value="tglKirim">Tanggal kirim</option><option value="tglBalik">Tanggal balik</option><option value="sertim">Tanggal sertim</option><option value="">(semua tanggal)</option></select>
+            <input type="date" id="pFrom" onchange="savePrefs();renderCases()"> s/d <input type="date" id="pTo" onchange="savePrefs();renderCases()">
+          </label>
+          <select id="cDc" onchange="renderQueues();renderCases()"><option value="">Semua DC</option><option>Cikupa</option><option>Cikande</option></select>
           <select id="cAdm" onchange="renderCases()"><option value="">Semua ADM</option></select>
         </div>
-        <div class="list" id="caseList"></div>
-        <div class="row hidden" id="moreRow"><button class="ghost" onclick="showMore()">Tampilkan lebih banyak</button></div>
+        <div class="queues" id="queues"></div>
+        <div class="filters">
+          <input type="text" id="q" placeholder="Cari LKPB, DO, No Tugu, LPN, SKU, store, customer…" oninput="renderCases()">
+          <button class="ghost small" onclick="exportCsv()">Unduh CSV</button>
+        </div>
+        <div class="savebar hidden" id="saveBar"><span id="saveTxt"></span><span class="sp"></span>
+          <button class="ghost small" onclick="discardEdits()">Batal</button><button class="primary small" id="saveAllBtn" onclick="saveEdits()">Simpan</button></div>
+        <div class="tblwrap" id="tblWrap"><table class="grid-t" id="caseTable"></table></div>
+        <div class="list hidden" id="caseList"></div>
+        <div class="row hidden" id="moreRow"><span class="muted" id="moreTxt" style="margin-right:auto"></span><button class="ghost" onclick="showMore()">Tampilkan lebih banyak</button></div>
       </div>
     </section>
 
@@ -259,7 +301,7 @@ svg text{font-family:inherit}
 var API_URL = 'https://script.google.com/macros/s/AKfycbysafJN4ViOMzI1EnW2iBb58rMzjnIw98GNC4tt2iCRe7aFu_C3uQRwCHaZd6Gg5WRn/exec';
 /* ==================================================== */
 
-var KEY = 'lkpb_session', S = { cases: [], trend: [], checks: [], lists: {}, cols: [] }, view = 'sum', queue = 'red', limit = 60, files = [], editing = null;
+var KEY = 'lkpb_session', S = { cases: [], trend: [], checks: [], lists: {}, cols: [] }, view = 'sum', queue = 'open', limit = 200, files = [], editing = null;
 var RED = ['LATE', 'OUTSTANDING', 'TOO LONG'];
 var STAGES = ['1 Keputusan', '2 Kirim', '3 Tarik', '4 Di DC'];
 var STAGE_LABEL = { '1 Keputusan': 'Belum diputuskan', '2 Kirim': 'Proses kirim', '3 Tarik': 'Tunggu tarik', '4 Di DC': 'Defect di DC', '5 DONE': 'Selesai', 'CLOSED': 'Ditutup' };
@@ -315,6 +357,8 @@ function enterApp(s) {
 
 /* ---------- data ---------- */
 function loadAll() {
+  if (Object.keys(dirty).length && !confirm('Ada perubahan yang belum disimpan. Muat ulang dan buang perubahan?')) return Promise.resolve();
+  dirty = {};
   if (!S.cases.length) $('v-sum').insertAdjacentHTML('afterbegin', '<div class="loading" id="ld">Memuat data…</div>');
   $('upd').textContent = 'memuat…';
   return api({ action: 'bootstrap' }).then(function (r) {
@@ -442,12 +486,74 @@ var QUEUES = [
   ['done', 'Selesai / ditutup', function (c) { return !isOpen(c); }],
   ['all', 'Semua', function () { return true; }]
 ];
-function gotoQueue(q) { queue = q; limit = 60; setView('cases'); renderQueues(); renderCases(); }
+function gotoQueue(q) { queue = q; limit = 200; setView('cases'); renderQueues(); renderCases(); }
+
+/* column presets = how the team splits the work */
+var PRESETS = [
+  ['kep', 'Keputusan (ADM LKPB)', ['created', 'store', 'pool', 'sku', 'desc', 'qty', 'subKondisi', 'remarkLkpb', 'fu', 'remarkFu', 'tto', 'adm', 'progress', 'keputusan', 'statusTarik', 'noteKirim', 'remark']],
+  ['tugu', 'Tugu kirim–tarik (ADM Penerima)', ['tglKirim', 'noLc', 'tuguNo', 'statusTugu', 'customer', 'telp', 'alamat', 'sku', 'desc', 'qty', 'lpn', 'tglBalik', 'admPenerima', 'causedBy', 'kategoriCacat', 'remarkBap', 'tglTarikUlang', 'posisi', 'tglKirimManual', 'pengajuanEx']],
+  ['ex', 'Ex-Tugu (WM)', ['tglBalik', 'lpn', 'tuguNo', 'sku', 'desc', 'skuGroup', 'qty', 'exTugu', 'lastLoc', 'toLoc', 'qtyEx', 'packaging', 'sloc', 'shift', 'wm', 'workDate', 'sertim', 'fisik', 'prBuyer', 'ketEx']],
+  ['all', 'Semua', null]
+];
+var preset = 'kep', mode = 'table', dirty = {};
+var DATE_COLS = ['created', 'due', 'tglKirim', 'tglBalik', 'updated', 'tglKirimManual', 'workDate', 'sertim', 'tglTarikUlang'];
+function prefs() { try { return JSON.parse(localStorage.getItem('lkpb_prefs') || '{}'); } catch (e) { return {}; } }
+function savePrefs() { try { localStorage.setItem('lkpb_prefs', JSON.stringify({ preset: preset, mode: mode, field: $('pField').value, from: $('pFrom').value, to: $('pTo').value })); } catch (e) { } }
+function initCaseUi() {
+  var p = prefs(), now = new Date();
+  preset = p.preset || 'kep'; mode = p.mode || (window.innerWidth < 760 ? 'cards' : 'table');
+  $('pField').value = p.field !== undefined ? p.field : 'created';
+  $('pFrom').value = p.from !== undefined ? p.from : (now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-01');
+  $('pTo').value = p.to || '';
+  $('presets').innerHTML = PRESETS.map(function (x) { return '<button data-p="' + x[0] + '">' + x[1] + '</button>'; }).join('');
+  document.querySelectorAll('#presets button').forEach(function (b) { b.onclick = function () { preset = b.getAttribute('data-p'); savePrefs(); renderCases(); }; });
+  document.querySelectorAll('#modeSeg button').forEach(function (b) { b.onclick = function () { mode = b.getAttribute('data-m'); savePrefs(); renderCases(); }; });
+}
+function presetCols() {
+  var p = PRESETS.filter(function (x) { return x[0] === preset; })[0];
+  if (p && p[2]) return p[2];
+  return S.cols.map(function (c) { return c.id; }).filter(function (id) { return ['key', 'stage', 'flag', 'lkpb'].indexOf(id) < 0; });
+}
+function colDef(id) { return S.cols.filter(function (c) { return c.id === id; })[0] || { id: id, label: id, block: '', manual: false }; }
+function cellText(id, v) {
+  if (DATE_COLS.indexOf(id) >= 0) return v ? fmt(v, ['created', 'tglKirim', 'tglBalik', 'due', 'updated'].indexOf(id) >= 0) : '';
+  return esc(v === '' || v == null ? '' : v);
+}
+function inputHtml(c, id) {
+  var v = dirty[c.key] && dirty[c.key][id] !== undefined ? dirty[c.key][id] : null, cur = v !== null ? v : c[id], chg = v !== null ? ' chg' : '';
+  var a = ' data-k="' + esc(c.key) + '" data-f="' + id + '" class="ed' + chg + '"';
+  if (S.dateInputs.indexOf(id) >= 0) return '<input type="date"' + a + ' value="' + (v !== null ? esc(v) : ymd(c[id])) + '">';
+  var dd = S.dropdowns[id];
+  if (dd) {
+    var opts = S.lists[dd[0]] || [];
+    if (dd[1]) return '<input type="text" list="dl2-' + id + '"' + a + ' value="' + esc(cur) + '">';
+    var has = !cur || opts.indexOf(String(cur)) >= 0;
+    return '<select' + a + '><option value=""></option>' + (has ? '' : '<option selected>' + esc(cur) + '</option>') +
+      opts.map(function (o) { return '<option' + (String(cur) === o ? ' selected' : '') + '>' + esc(o) + '</option>'; }).join('') + '</select>';
+  }
+  return '<input type="' + (id === 'qtyEx' ? 'number' : 'text') + '"' + a + ' value="' + esc(cur) + '">';
+}
+function caseRowsFiltered() {
+  var qf = (QUEUES.filter(function (q) { return q[0] === queue; })[0] || QUEUES[0])[2];
+  var term = $('q').value.trim().toLowerCase(), adm = $('cAdm').value;
+  var f = $('pField').value, from = $('pFrom').value ? new Date($('pFrom').value + 'T00:00:00').getTime() : null,
+    to = $('pTo').value ? new Date($('pTo').value + 'T23:59:59').getTime() : null;
+  var cs = filtered('cDc').filter(qf).filter(function (c) {
+    if (f && (from || to)) { var d = c[f]; if (typeof d !== 'number') return false; if (from && d < from) return false; if (to && d > to) return false; }
+    if (adm === '-' && c.adm) return false; if (adm && adm !== '-' && c.adm !== adm) return false;
+    if (!term) return true;
+    return [c.lkpb, c.doNo, c.tuguNo, c.sku, c.desc, c.store, c.customer, c.telp, c.lpn, c.tto, c.noLc].join(' ').toLowerCase().indexOf(term) >= 0;
+  });
+  var sf = f || 'created';
+  cs.sort(function (a, b) { return ((typeof b[sf] === 'number' ? b[sf] : 0) - (typeof a[sf] === 'number' ? a[sf] : 0)) || String(a.key).localeCompare(String(b.key)); });
+  return cs;
+}
+
 function renderQueues() {
   var cs = filtered('cDc');
   $('queues').innerHTML = QUEUES.map(function (q) {
     var n = cs.filter(q[2]).length;
-    return '<button class="' + (queue === q[0] ? 'on' : '') + '" onclick="queue=\'' + q[0] + '\';limit=60;renderQueues();renderCases()">' + q[1] + '<b>' + n + '</b></button>';
+    return '<button class="' + (queue === q[0] ? 'on' : '') + '" onclick="queue=\'' + q[0] + '\';limit=200;renderQueues();renderCases()">' + q[1] + '<b>' + n + '</b></button>';
   }).join('');
   var redN = S.cases.filter(isRed).length;
 }
@@ -460,6 +566,10 @@ function flagChip(c) {
   var cls = c.flag === 'AT RISK' ? 'yel' : 'red', lab = { 'LATE': 'Terlambat', 'AT RISK': 'Jatuh tempo hari ini', 'OUTSTANDING': 'Gagal tarik', 'TOO LONG': 'Terlalu lama di DC' }[c.flag] || c.flag;
   return '<span class="chip ' + cls + '">' + lab + '</span>';
 }
+function flagShort(c) {
+  var lab = { 'LATE': 'Telat', 'AT RISK': 'Hari ini', 'OUTSTANDING': 'Gagal tarik', 'TOO LONG': '> 7 hari' }[c.flag] || c.flag;
+  return '<span class="chip ' + (c.flag === 'AT RISK' ? 'yel' : 'red') + '">' + lab + '</span>';
+}
 function itemHtml(c) {
   var id = c.lkpb || c.tuguNo || c.key;
   return '<div class="item" data-key="' + esc(c.key) + '">' +
@@ -470,24 +580,89 @@ function itemHtml(c) {
     (c.statusTugu ? ' · ' + esc(c.statusTugu) : '') + '</div></div>';
 }
 function renderCases() {
-  var qf = (QUEUES.filter(function (q) { return q[0] === queue; })[0] || QUEUES[0])[2];
-  var term = $('q').value.trim().toLowerCase(), adm = $('cAdm').value;
-  var cs = filtered('cDc').filter(qf).filter(function (c) {
-    if (adm === '-' && c.adm) return false; if (adm && adm !== '-' && c.adm !== adm) return false;
-    if (!term) return true;
-    return [c.lkpb, c.doNo, c.tuguNo, c.sku, c.desc, c.store, c.customer, c.telp, c.lpn, c.tto].join(' ').toLowerCase().indexOf(term) >= 0;
-  });
-  cs.sort(function (a, b) { return (isRed(b) - isRed(a)) || ((b.aging || 0) - (a.aging || 0)); });
-  $('caseList').innerHTML = cs.length ? cs.slice(0, limit).map(itemHtml).join('') : '<div class="empty">Tidak ada kasus.</div>';
+  if (!$('presets').innerHTML) initCaseUi();
+  document.querySelectorAll('#presets button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-p') === preset); });
+  document.querySelectorAll('#modeSeg button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-m') === mode); });
+  $('presets').classList.toggle('hidden', mode !== 'table');
+  var cs = caseRowsFiltered();
+  $('moreTxt').textContent = cs.length > limit ? 'Menampilkan ' + limit + ' dari ' + cs.length + ' kasus' : '';
   $('moreRow').classList.toggle('hidden', cs.length <= limit);
+  $('tblWrap').classList.toggle('hidden', mode !== 'table'); $('caseList').classList.toggle('hidden', mode === 'table');
+  if (mode === 'cards') { $('caseList').innerHTML = cs.length ? cs.slice(0, limit).map(itemHtml).join('') : '<div class="empty">Tidak ada kasus di filter ini.</div>'; updateSaveBar(); return; }
+  var cols = presetCols();
+  var dls = '';   // shared datalists for free-text dropdown columns
+  cols.forEach(function (id) { var dd = S.dropdowns[id]; if (dd && dd[1]) dls += '<datalist id="dl2-' + id + '">' + (S.lists[dd[0]] || []).map(function (o) { return '<option value="' + esc(o) + '">'; }).join('') + '</datalist>'; });
+  var head = '<tr><th class="fix c0">Tahap</th><th class="fix c1">LKPB / No Tugu</th>' + cols.map(function (id) {
+    var d = colDef(id); return '<th class="' + (d.manual ? 'm-' + d.block : '') + '">' + esc(d.label) + (d.manual ? ' ✎' : '') + '</th>'; }).join('') + '</tr>';
+  var body = cs.slice(0, limit).map(function (c) {
+    return '<tr class="' + (dirty[c.key] ? 'dirty' : '') + '"><td class="fix c0">' + stageChip(c) + (c.flag ? ' ' + flagShort(c) : '') + '</td>' +
+      '<td class="fix c1"><a href="#" class="id" data-key="' + esc(c.key) + '">' + esc(c.lkpb || c.tuguNo) + '</a>' + (c.sumber === 'HO' ? ' <span class="chip gry">HO</span>' : '') + '</td>' +
+      cols.map(function (id) {
+        var d = colDef(id);
+        if (d.manual) return '<td class="m">' + inputHtml(c, id) + '</td>';
+        var t = cellText(id, c[id]);
+        return '<td title="' + t + '">' + (['tuguNo', 'lpn', 'sku', 'noLc', 'doNo'].indexOf(id) >= 0 ? '<span class="mono">' + t + '</span>' : t) + '</td>';
+      }).join('') + '</tr>';
+  }).join('');
+  $('caseTable').innerHTML = '<thead>' + head + '</thead><tbody>' + (body || '<tr><td colspan="' + (cols.length + 2) + '" class="empty">Tidak ada kasus di filter ini.</td></tr>') + '</tbody>';
+  var old = $('dlHost'); if (old) old.remove();
+  document.body.insertAdjacentHTML('beforeend', '<div id="dlHost" class="hidden">' + dls + '</div>');
+  updateSaveBar();
 }
-function showMore() { limit += 60; renderCases(); }
+/* inline edits → dirty buffer → one batch save */
+document.addEventListener('input', onCellEdit); document.addEventListener('change', onCellEdit);
+function onCellEdit(e) {
+  var el = e.target; if (!el.classList || !el.classList.contains('ed')) return;
+  var key = el.getAttribute('data-k'), id = el.getAttribute('data-f'), c = S.cases.filter(function (x) { return x.key === key; })[0]; if (!c) return;
+  var orig = S.dateInputs.indexOf(id) >= 0 ? ymd(c[id]) : String(c[id] == null ? '' : c[id]);
+  dirty[key] = dirty[key] || {};
+  if (el.value === orig) delete dirty[key][id]; else dirty[key][id] = el.value;
+  if (!Object.keys(dirty[key]).length) delete dirty[key];
+  el.classList.toggle('chg', !!(dirty[key] && dirty[key][id] !== undefined));
+  var tr = el.closest('tr'); if (tr) tr.classList.toggle('dirty', !!dirty[key]);
+  updateSaveBar();
+}
+function updateSaveBar() {
+  var n = Object.keys(dirty).length;
+  $('saveBar').classList.toggle('hidden', !n);
+  if (n) $('saveTxt').textContent = n + ' baris diubah, belum disimpan';
+}
+function discardEdits() { dirty = {}; renderCases(); }
+function saveEdits() {
+  var items = Object.keys(dirty).map(function (k) { return { key: k, fields: dirty[k] }; });
+  if (!items.length) return;
+  $('saveAllBtn').disabled = true; $('saveTxt').textContent = 'Menyimpan ' + items.length + ' baris…';
+  api({ action: 'saveCases', items: items }).then(function (r) {
+    $('saveAllBtn').disabled = false;
+    if (!r.ok) { $('saveTxt').textContent = r.error; return; }
+    var errs = [];
+    r.results.forEach(function (x) {
+      if (x.error) { errs.push(x.key + ': ' + x.error); return; }
+      var i = S.cases.map(function (c) { return c.key; }).indexOf(x.key); if (i >= 0) S.cases[i] = toObj(x.row);
+      delete dirty[x.key];
+    });
+    renderAll(); toast(r.saved + ' baris tersimpan' + (errs.length ? ', ' + errs.length + ' gagal' : ''));
+    if (errs.length) $('saveTxt').textContent = errs.join(' · ');
+  }).catch(function (e) { $('saveAllBtn').disabled = false; $('saveTxt').textContent = 'Gagal: ' + e.message; });
+}
+window.addEventListener('beforeunload', function (e) { if (Object.keys(dirty).length) { e.preventDefault(); e.returnValue = ''; } });
+function exportCsv() {
+  var cols = ['stage', 'flag', 'lkpb'].concat(presetCols()), cs = caseRowsFiltered();
+  var q = function (v) { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  var lines = [cols.map(function (id) { return q(colDef(id).label); }).join(',')].concat(cs.map(function (c) {
+    return cols.map(function (id) { var v = c[id]; return q(DATE_COLS.indexOf(id) >= 0 && typeof v === 'number' ? fmt(v, true) : v); }).join(',');
+  }));
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'lkpb_' + preset + '_' + ($('pFrom').value || 'all') + '.csv'; a.click();
+}
+function showMore() { limit += 200; renderCases(); }
 
 /* ---------- case editor ---------- */
 var FORM = [
-  ['n', 'Keputusan', ['adm', 'progress', 'keputusan', 'statusTarik']],
-  ['g', 'Tugu', ['tglKirimManual', 'remark', 'admPenerima', 'pengajuanEx']],
-  ['r', 'Ex-Tugu', ['exTugu', 'fisik', 'lastLoc', 'prBuyer', 'workDate', 'shift', 'sertim', 'wm', 'toLoc', 'qtyEx', 'ketEx', 'packaging']]
+  ['n', 'Keputusan', ['adm', 'progress', 'keputusan', 'statusTarik', 'noteKirim', 'remark']],
+  ['g', 'Tugu kirim–tarik', ['admPenerima', 'causedBy', 'kategoriCacat', 'posisi', 'tglTarikUlang', 'tglKirimManual', 'remarkBap', 'pengajuanEx']],
+  ['r', 'Ex-Tugu', ['exTugu', 'lastLoc', 'toLoc', 'qtyEx', 'packaging', 'sloc', 'shift', 'wm', 'workDate', 'sertim', 'fisik', 'prBuyer', 'ketEx']]
 ];
 function label(id) { var c = S.cols.filter(function (x) { return x.id === id; })[0]; return c ? c.label : id; }
 function openCase(key) {
@@ -500,7 +675,7 @@ function openCase(key) {
     ['Created', fmt(c.created, true)], ['No. Tugu / OD', '<span class="mono">' + esc(c.tuguNo || '–') + '</span>'],
     ['DO', '<span class="mono">' + esc(c.doNo || '–') + '</span>'], ['SKU', '<span class="mono">' + esc(c.sku || '') + '</span> · Qty ' + esc(c.qty) + ' · ' + esc(c.skuGroup || '')],
     ['Kerusakan', esc(c.subKondisi || '–') + ' — ' + esc(c.remarkLkpb || '')], ['FU S2', esc(c.fu || '–') + (c.remarkFu ? ' — ' + esc(c.remarkFu) : '')],
-    ['No. TTO', esc(c.tto || '–')], ['Status Tugu', esc(c.statusTugu || '–')], ['Tanggal kirim', fmt(c.tglKirim, true)],
+    ['No. TTO', esc(c.tto || '–')], ['Status Tugu', esc(c.statusTugu || '–')], ['Tanggal kirim', fmt(c.tglKirim, true) + (c.noLc ? ' · LC <span class="mono">' + esc(c.noLc) + '</span>' : '')],
     ['Customer', esc(c.customer || '–')], ['Telp', c.telp ? '<a href="tel:' + esc(String(c.telp).replace(/[^\d+]/g, '')) + '">' + esc(c.telp) + '</a>' : '–'],
     ['Alamat', esc(c.alamat || '–')], ['LPN hold', '<span class="mono">' + esc(c.lpn || '–') + '</span>'],
     ['Tanggal balik', fmt(c.tglBalik, true)], ['Penyebab', esc(c.cause || '–')], ['Hold released', esc(c.holdReleased || '–')],
@@ -514,7 +689,7 @@ function openCase(key) {
   $('ovl').classList.remove('hidden'); document.body.style.overflow = 'hidden';
 }
 function fieldHtml(id, val) {
-  var lab = esc(label(id)), dd = S.dropdowns[id], full = ['remark', 'pengajuanEx', 'ketEx'].indexOf(id) >= 0 ? ' full' : '';
+  var lab = esc(label(id)), dd = S.dropdowns[id], full = ['remark', 'pengajuanEx', 'ketEx', 'remarkBap'].indexOf(id) >= 0 ? ' full' : '';
   if (S.dateInputs.indexOf(id) >= 0) return '<label class="' + full + '">' + lab + '<input type="date" data-f="' + id + '" value="' + ymd(val) + '"></label>';
   if (dd) {
     var opts = S.lists[dd[0]] || [];
