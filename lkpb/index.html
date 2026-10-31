@@ -122,7 +122,7 @@ button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:10px 18p
 .filters .sp{flex:1}
 label.per{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted);flex-wrap:wrap}
 .savebar{display:flex;align-items:center;gap:8px;background:var(--warn);color:var(--warnT);border-radius:10px;padding:8px 12px;margin-bottom:10px;font-weight:700;font-size:13.5px;position:sticky;top:6px;z-index:5}
-.tblwrap{overflow:auto;max-height:max(320px,calc(100vh - 230px));border:1px solid var(--line);border-radius:10px}
+.tblwrap{overflow:auto;max-height:max(360px,calc(100vh - 110px));border:1px solid var(--line);border-radius:10px}
 table.grid-t{border-collapse:separate;border-spacing:0;font-size:12.5px;min-width:100%}
 .grid-t th{position:sticky;top:0;z-index:2;background:var(--navy);color:#fff;font-weight:700;text-align:center;padding:8px 8px;white-space:nowrap;border-right:1px solid rgba(255,255,255,.15)}
 .grid-t th.m-DEC{background:#d9d9d9;color:var(--text)} .grid-t th.m-TUGU{background:#38761d} .grid-t th.m-EX{background:#990000}
@@ -134,7 +134,9 @@ table.grid-t{border-collapse:separate;border-spacing:0;font-size:12.5px;min-widt
 .grid-t tr.dirty td{background:#fffbe0}
 .grid-t td.fix{position:sticky;z-index:1}
 .grid-t th.fix{position:sticky;z-index:3}
-.grid-t .c0{left:0;width:214px;min-width:214px;max-width:214px}.grid-t .c1{left:214px;min-width:180px;box-shadow:2px 0 0 var(--line)}
+.grid-t .cn{left:0;width:46px;min-width:46px;max-width:46px;text-align:center;color:var(--muted);font-size:11.5px;background:#f7f9fc!important}
+.grid-t th.cn{background:#012a5a!important;color:#cfd9e8}
+.grid-t .c0{left:46px;width:214px;min-width:214px;max-width:214px}.grid-t .c1{left:260px;min-width:180px;box-shadow:2px 0 0 var(--line)}
 @media (max-width:700px){.grid-t td.fix,.grid-t th.fix{position:static}.grid-t .c0{width:auto;min-width:0;max-width:none}}
 .grid-t td.m{background:#fffdf3;padding:2px 4px}
 .grid-t tr.dirty td.m{background:#fff6c2}
@@ -146,6 +148,43 @@ table.grid-t{border-collapse:separate;border-spacing:0;font-size:12.5px;min-widt
 .grid-t td.m .chg{border-color:#e0b400;background:#fff}
 .grid-t a.id{font-weight:800;color:var(--navy);text-decoration:none;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
 .grid-t a.id:hover{text-decoration:underline}
+.grid-t.compact{font-size:12px}
+.grid-t.compact td{padding:2px 8px;white-space:nowrap;max-width:260px;overflow:hidden;text-overflow:ellipsis;vertical-align:middle;line-height:1.25}
+.grid-t.compact td.w{white-space:nowrap;min-width:0;max-width:240px}
+.grid-t.compact td:not(.m):not(.fix){cursor:default}
+.grid-t.compact td.m{padding:1px 3px}
+.grid-t.compact td.m select,.grid-t.compact td.m input{padding:2px 6px;font-size:12px;height:24px}
+.grid-t.compact .chip{padding:1px 7px;font-size:10.5px}
+.grid-t.compact th{padding:6px 8px;font-size:12px}
+.cellpop{position:fixed;z-index:50;max-width:360px;background:#fff;border:1px solid var(--navy2);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.4;box-shadow:0 10px 30px rgba(2,56,118,.25);white-space:pre-wrap;word-break:break-word}
+#casesCard.full{position:fixed;inset:0;z-index:25;margin:0;border-radius:0;overflow:auto}
+.cardgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,430px),1fr));gap:12px}
+.ccard{background:#fff;border:1px solid var(--line);border-left:4px solid var(--navy);border-radius:12px;padding:12px 14px;cursor:pointer;transition:.12s;box-shadow:0 2px 8px rgba(2,56,118,.05)}
+.ccard:hover{border-color:var(--navy2);box-shadow:0 6px 18px rgba(2,56,118,.12)}
+.ccard.red{border-left-color:var(--red)} .ccard.yel{border-left-color:var(--yellow)}
+.ccard .ch{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ccard .ch .id{font-weight:800;color:var(--navy)} .ccard .ch .sp{flex:1}
+.cdesc{font-weight:700;margin-top:6px;font-size:13.5px}
+.cmeta{color:var(--muted);font-size:12.5px;margin-top:1px}
+.tl{display:flex;margin:14px 0 10px;position:relative}
+.tl .st{flex:1;position:relative;text-align:center;padding:0 2px;min-width:0}
+.tl .st::before{content:"";position:absolute;top:10px;left:-50%;right:50%;height:3px;background:var(--line);z-index:0}
+.tl .st:first-child::before{display:none}
+.tl .st.done::before,.tl .st.cur::before{background:var(--navy)}
+.tl .dot{width:22px;height:22px;border-radius:50%;margin:0 auto;position:relative;z-index:1;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;background:#fff;border:2px solid var(--line);color:#fff}
+.tl .done .dot{background:var(--navy);border-color:var(--navy)}
+.tl .cur .dot{border:3px solid var(--navy);color:var(--navy);box-shadow:0 0 0 4px rgba(10,74,150,.15)}
+.tl .cur.red .dot{border-color:var(--red);color:var(--red);box-shadow:0 0 0 4px rgba(227,30,67,.18)}
+.tl .cur.yel .dot{border-color:#d4b500;color:#8a7400;box-shadow:0 0 0 4px rgba(248,215,0,.25)}
+.tl .skip .dot{background:#eef0f3;border-color:#d9dde5}
+.tl .sk{font-size:11px;font-weight:800;margin-top:5px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl .todo .sk,.tl .skip .sk{color:var(--muted);font-weight:700}
+.tl .cur .sk{color:var(--navy)} .tl .cur.red .sk{color:var(--red)}
+.tl .sd{font-size:10.5px;color:var(--muted);margin-top:1px;white-space:nowrap}
+.tl .ss{font-size:10.5px;color:var(--text);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl .lt{position:absolute;top:-13px;left:-50%;width:100%;font-size:10px;color:var(--navy2);font-weight:700}
+.cfoot{display:flex;gap:12px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px}
+.cfoot b{color:var(--text)} .cfoot .sp{flex:1} .cfoot .open{color:var(--navy);font-weight:800}
 .ovl{position:fixed;inset:0;background:rgba(20,33,61,.45);display:flex;justify-content:flex-end;z-index:20}
 .drawer{background:var(--bg);width:min(720px,100%);height:100%;overflow:auto;display:flex;flex-direction:column}
 .dh{background:var(--navy);color:#fff;padding:14px 18px;position:sticky;top:0;z-index:2}
@@ -244,10 +283,13 @@ svg text{font-family:inherit}
     </section>
 
     <section id="v-cases" class="hidden">
-      <div class="card">
+      <div class="card" id="casesCard">
         <div class="viewbar">
-          <div class="vb-left"><span class="vb-title">Tampilan</span><div class="seg" id="presets"></div></div>
-          <div class="vb-left"><button class="outline small" onclick="exportCsv()">⬇ Unduh CSV</button><div class="seg" id="modeSeg"><button data-m="table" class="on">Tabel</button><button data-m="cards">Kartu</button></div></div>
+          <div class="vb-left"><span class="vb-title" id="vbTitle">Tampilan</span><div class="seg" id="presets"></div></div>
+          <div class="vb-left"><div class="seg" id="densSeg" title="Kerapatan baris"><button data-d="compact">Rapat</button><button data-d="relaxed">Lega</button></div>
+            <button class="outline small" id="fsBtn" onclick="toggleFull()">⛶ Layar penuh</button>
+            <button class="outline small" onclick="exportCsv()">⬇ Unduh CSV</button>
+            <div class="seg" id="modeSeg"><button data-m="table" class="on">Tabel</button><button data-m="cards">Kartu</button></div></div>
         </div>
         <div class="filterbar">
           <label class="field"><span class="lbl">Periode berdasarkan</span><select id="pField" onchange="savePrefs();renderCases()"><option value="created">Created LKPB</option><option value="tglKirim">Tanggal kirim</option><option value="tglBalik">Tanggal balik</option><option value="sertim">Tanggal sertim</option><option value="">Semua tanggal</option></select></label>
@@ -261,7 +303,7 @@ svg text{font-family:inherit}
         <div class="savebar hidden" id="saveBar"><span id="saveTxt"></span><span class="sp"></span>
           <button class="ghost small" onclick="discardEdits()">Batal</button><button class="primary small" id="saveAllBtn" onclick="saveEdits()">Simpan</button></div>
         <div class="tblwrap" id="tblWrap"><table class="grid-t" id="caseTable"></table></div>
-        <div class="list hidden" id="caseList"></div>
+        <div class="cardgrid hidden" id="caseList"></div>
         <div class="row hidden" id="moreRow"><span class="muted" id="moreTxt" style="margin-right:auto"></span><button class="ghost" onclick="showMore()">Tampilkan lebih banyak</button></div>
       </div>
     </section>
@@ -329,7 +371,7 @@ var KEY = "lkpb_session", S = {
   checks: [],
   lists: {},
   cols: []
-}, view = "sum", queue = "open", limit = 200, files = [], editing = null;
+}, view = "sum", queue = "open", limit = 500, files = [], editing = null;
 
 var RED = [ "LATE", "OUTSTANDING", "TOO LONG" ];
 
@@ -765,7 +807,7 @@ var QUEUES = [ [ "red", "Merah", function(c) {
 
 function gotoQueue(q) {
   queue = q;
-  limit = 200;
+  limit = 500;
   setView("cases");
   renderQueues();
   renderCases();
@@ -773,7 +815,7 @@ function gotoQueue(q) {
 
 var PRESETS = [ [ "kep", "Keputusan (ADM LKPB)", [ "created", "store", "pool", "sku", "desc", "qty", "subKondisi", "remarkLkpb", "fu", "remarkFu", "tto", "kepS2", "adm", "progress", "keputusan", "statusTarik", "noteKirim", "remark" ] ], [ "tugu", "Tugu kirim–tarik (ADM Penerima)", [ "tglKirim", "noLc", "tuguNo", "statusTugu", "customer", "telp", "alamat", "sku", "desc", "qty", "lpn", "tglBalik", "admPenerima", "causedBy", "kategoriCacat", "remarkBap", "tglTarikUlang", "posisi", "tglKirimManual", "pengajuanEx" ] ], [ "ex", "Ex-Tugu (WM)", [ "tglBalik", "lpn", "tuguNo", "sku", "desc", "skuGroup", "qty", "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ], [ "all", "Semua", null ] ];
 
-var preset = "kep", mode = "table", dirty = {};
+var preset = "kep", mode = "table", dirty = {}, density = "compact", full = false;
 
 var WRAP_COLS = [ "desc", "store", "pool", "remarkLkpb", "remarkFu", "customer", "alamat", "subKondisi", "statusTugu", "lpn", "tto" ];
 
@@ -796,6 +838,7 @@ function savePrefs() {
     localStorage.setItem("lkpb_prefs", JSON.stringify({
       preset: preset,
       mode: mode,
+      density: density,
       field: $("pField").value,
       from: $("pFrom").value,
       to: $("pTo").value
@@ -807,6 +850,14 @@ function initCaseUi() {
   var p = prefs(), now = new Date;
   preset = p.preset || "kep";
   mode = p.mode || (window.innerWidth < 760 ? "cards" : "table");
+  density = p.density || "compact";
+  document.querySelectorAll("#densSeg button").forEach((function(b) {
+    b.onclick = function() {
+      density = b.getAttribute("data-d");
+      savePrefs();
+      renderCases();
+    };
+  }));
   $("pField").value = p.field !== undefined ? p.field : "created";
   $("pFrom").value = p.from !== undefined ? p.from : now.getFullYear() + "-" + pad(now.getMonth() + 1) + "-01";
   $("pTo").value = p.to || "";
@@ -902,7 +953,7 @@ function renderQueues() {
   var cs = filtered("cDc");
   $("queues").innerHTML = QUEUES.map((function(q) {
     var n = cs.filter(q[2]).length;
-    return '<button class="' + (queue === q[0] ? "on" : "") + (q[0] === "red" ? " red" : "") + '" onclick="queue=\'' + q[0] + "';limit=200;renderQueues();renderCases()\">" + q[1] + "<b>" + n + "</b></button>";
+    return '<button class="' + (queue === q[0] ? "on" : "") + (q[0] === "red" ? " red" : "") + '" onclick="queue=\'' + q[0] + "';limit=500;renderQueues();renderCases()\">" + q[1] + "<b>" + n + "</b></button>";
   })).join("");
   var redN = S.cases.filter(isRed).length;
 }
@@ -947,13 +998,23 @@ function renderCases() {
     b.classList.toggle("on", b.getAttribute("data-m") === mode);
   }));
   $("presets").classList.toggle("hidden", mode !== "table");
+  document.querySelectorAll("#densSeg button").forEach((function(b) {
+    b.classList.toggle("on", b.getAttribute("data-d") === density);
+  }));
+  $("densSeg").classList.toggle("hidden", mode !== "table");
+  $("vbTitle").classList.toggle("hidden", mode !== "table");
+  $("fsBtn").classList.toggle("hidden", mode !== "table");
+  if (mode !== "table" && full) toggleFull();
   var cs = caseRowsFiltered();
   $("moreTxt").textContent = cs.length > limit ? "Menampilkan " + limit + " dari " + cs.length + " kasus" : "";
   $("moreRow").classList.toggle("hidden", cs.length <= limit);
   $("tblWrap").classList.toggle("hidden", mode !== "table");
   $("caseList").classList.toggle("hidden", mode === "table");
   if (mode === "cards") {
-    $("caseList").innerHTML = cs.length ? cs.slice(0, limit).map(itemHtml).join("") : '<div class="empty">Tidak ada kasus di filter ini.</div>';
+    $("caseList").innerHTML = cs.length ? cs.slice(0, Math.min(limit, 120)).map(cardHtml).join("") : '<div class="empty">Tidak ada kasus di filter ini.</div>';
+    $("moreTxt").textContent = cs.length > 120 ? "Menampilkan 120 dari " + cs.length + " kasus — persempit filter atau pakai Tabel" : "";
+    $("moreRow").classList.add("hidden");
+    if (cs.length > 120) $("moreRow").classList.remove("hidden");
     updateSaveBar();
     return;
   }
@@ -965,24 +1026,126 @@ function renderCases() {
       return '<option value="' + esc(o) + '">';
     })).join("") + "</datalist>";
   }));
-  var head = '<tr><th class="fix c0">Tahap</th><th class="fix c1">LKPB / No Tugu</th>' + cols.map((function(id) {
+  var head = '<tr><th class="fix cn">#</th><th class="fix c0">Tahap</th><th class="fix c1">LKPB / No Tugu</th>' + cols.map((function(id) {
     var d = colDef(id);
     return '<th class="' + (d.manual ? "m-" + d.block : "") + '">' + esc(d.label) + (d.manual ? " ✎" : "") + "</th>";
   })).join("") + "</tr>";
-  var body = cs.slice(0, limit).map((function(c) {
-    return '<tr class="' + (dirty[c.key] ? "dirty" : "") + '"><td class="fix c0">' + stageChip(c) + (c.flag ? " " + flagShort(c) : "") + "</td>" + '<td class="fix c1"><a href="#" class="id" data-key="' + esc(c.key) + '">' + esc(c.lkpb || c.tuguNo) + "</a>" + (c.sumber === "HO" ? ' <span class="chip gry">HO</span>' : "") + "</td>" + cols.map((function(id) {
+  var body = cs.slice(0, limit).map((function(c, ri) {
+    return '<tr class="' + (dirty[c.key] ? "dirty" : "") + '"><td class="fix cn">' + (ri + 1) + '</td><td class="fix c0">' + stageChip(c) + (c.flag ? " " + flagShort(c) : "") + "</td>" + '<td class="fix c1"><a href="#" class="id" data-key="' + esc(c.key) + '">' + esc(c.lkpb || c.tuguNo) + "</a>" + (c.sumber === "HO" ? ' <span class="chip gry">HO</span>' : "") + "</td>" + cols.map((function(id) {
       var d = colDef(id);
       if (d.manual) return '<td class="m' + (WIDE_INPUTS.indexOf(id) >= 0 ? " wide" : "") + '">' + inputHtml(c, id) + "</td>";
       var t = cellText(id, c[id]);
       return "<td" + (WRAP_COLS.indexOf(id) >= 0 ? ' class="w"' : NUM_COLS.indexOf(id) >= 0 ? ' class="n"' : "") + ">" + ([ "tuguNo", "lpn", "sku", "noLc", "doNo" ].indexOf(id) >= 0 ? '<span class="mono">' + t + "</span>" : t) + "</td>";
     })).join("") + "</tr>";
   })).join("");
-  $("caseTable").innerHTML = "<thead>" + head + "</thead><tbody>" + (body || '<tr><td colspan="' + (cols.length + 2) + '" class="empty">Tidak ada kasus di filter ini.</td></tr>') + "</tbody>";
+  $("caseTable").classList.toggle("compact", density === "compact");
+  $("caseTable").innerHTML = "<thead>" + head + "</thead><tbody>" + (body || '<tr><td colspan="' + (cols.length + 3) + '" class="empty">Tidak ada kasus di filter ini.</td></tr>') + "</tbody>";
   var old = $("dlHost");
   if (old) old.remove();
   document.body.insertAdjacentHTML("beforeend", '<div id="dlHost" class="hidden">' + dls + "</div>");
   updateSaveBar();
+  fitTable();
 }
+
+function timelineSteps(c) {
+  var noPull = c.keputusan === "FOC Sparepart" || c.statusTarik === "Tidak Ada Penarikan";
+  var kirim = c.tglKirim || c.tglKirimManual;
+  var steps = [ {
+    k: "LKPB masuk",
+    d: c.created,
+    sub: c.store ? String(c.store).split(" - ")[0] : ""
+  }, {
+    k: "Keputusan",
+    d: null,
+    done: !!c.keputusan,
+    sub: c.keputusan || "belum"
+  }, {
+    k: noPull ? "Kirim (TTO)" : "Kirim",
+    d: kirim,
+    sub: c.noLc ? "LC " + c.noLc : c.statusTugu && !kirim ? c.statusTugu : "",
+    lt: c.ltKirim
+  } ];
+  if (!noPull) {
+    steps.push({
+      k: "Barang balik",
+      d: c.tglBalik,
+      sub: c.lpn ? String(c.lpn).split(", ")[0] : "",
+      lt: c.ltBalik
+    });
+    steps.push({
+      k: "Sertim",
+      d: c.sertim,
+      sub: c.exTugu || "",
+      lt: c.ltSertim
+    });
+  } else {
+    steps.push({
+      k: "Selesai",
+      d: c.stage === "5 DONE" ? kirim : null,
+      done: c.stage === "5 DONE",
+      sub: ""
+    });
+  }
+  var cur = -1;
+  steps.forEach((function(s, i) {
+    s.done = s.done !== undefined ? s.done : typeof s.d === "number";
+    if (cur < 0 && !s.done) cur = i;
+  }));
+  if (c.stage === "CLOSED") cur = -2;
+  return {
+    steps: steps,
+    cur: cur
+  };
+}
+
+function cardHtml(c) {
+  var t = timelineSteps(c), tone = c.flag === "AT RISK" ? "yel" : isRed(c) ? "red" : "";
+  var tl = t.steps.map((function(s, i) {
+    var st = t.cur === -2 ? "skip" : s.done ? "done" : i === t.cur ? "cur " + tone : "todo";
+    return '<div class="st ' + st + '"><div class="dot">' + (s.done ? "✓" : i === t.cur ? "•" : "") + "</div>" + '<div class="sk">' + esc(s.k) + "</div>" + '<div class="sd">' + (typeof s.d === "number" ? fmt(s.d, true) : s.done ? "" : i === t.cur && c.due && i <= 2 ? "due " + fmt(c.due) : "–") + "</div>" + (s.sub ? '<div class="ss">' + esc(s.sub) + "</div>" : "") + (i > 0 && s.lt !== undefined && s.lt !== "" ? '<div class="lt">' + (+s.lt >= 0 ? "+" : "") + esc(s.lt) + " hari</div>" : "") + "</div>";
+  })).join("");
+  var id = c.lkpb || c.tuguNo || c.key;
+  return '<div class="ccard ' + tone + '" data-key="' + esc(c.key) + '">' + '<div class="ch"><span class="id mono">' + esc(id) + "</span>" + (c.sumber === "HO" ? '<span class="chip gry">HO</span>' : "") + '<span class="chip gry">' + esc(c.dcAdmin || "") + '</span><span class="sp"></span>' + flagChip(c) + stageChip(c) + "</div>" + '<div class="cdesc">' + esc(c.desc || c.sku || "") + "</div>" + '<div class="cmeta">' + esc(c.store || "") + (c.customer ? " · " + esc(c.customer) : "") + "</div>" + '<div class="tl">' + tl + "</div>" + '<div class="cfoot"><span>ADM <b>' + esc(c.adm || "–") + "</b></span>" + (c.tuguNo && c.sumber !== "HO" ? '<span>Tugu <b class="mono">' + esc(c.tuguNo) + "</b></span>" : "") + "<span>Umur <b>" + (c.aging !== "" ? esc(c.aging) + " hari" : "–") + "</b></span>" + (c.subKondisi ? "<span>" + esc(c.subKondisi) + "</span>" : "") + '<span class="sp"></span><span class="open">Detail →</span></div></div>';
+}
+
+function toggleFull() {
+  full = !full;
+  $("casesCard").classList.toggle("full", full);
+  $("fsBtn").textContent = full ? "✕ Keluar layar penuh" : "⛶ Layar penuh";
+  document.body.style.overflow = full ? "hidden" : "";
+  fitTable();
+}
+
+function fitTable() {
+  var w = $("tblWrap");
+  if (!w || w.classList.contains("hidden")) return;
+  if (full) {
+    var top = w.getBoundingClientRect().top;
+    w.style.maxHeight = Math.max(260, window.innerHeight - top - ($("moreRow").classList.contains("hidden") ? 14 : 62)) + "px";
+  } else w.style.maxHeight = "";
+}
+
+window.addEventListener("resize", fitTable);
+
+document.addEventListener("keydown", (function(e) {
+  if (e.key === "Escape" && full && !editing) toggleFull();
+}));
+
+document.addEventListener("click", (function(e) {
+  var pop = $("cellPop");
+  if (pop && !e.target.closest("#cellPop")) pop.remove();
+  var td = e.target.closest("#caseTable.compact td");
+  if (!td || td.classList.contains("m") || td.classList.contains("fix") || e.target.closest("a")) return;
+  if (td.scrollWidth <= td.clientWidth + 1) return;
+  var r = td.getBoundingClientRect(), d = document.createElement("div");
+  d.id = "cellPop";
+  d.className = "cellpop";
+  d.textContent = td.textContent;
+  d.style.left = Math.min(r.left, window.innerWidth - 380) + "px";
+  d.style.top = r.bottom + 4 + "px";
+  document.body.appendChild(d);
+  e.stopPropagation();
+}));
 
 document.addEventListener("input", onCellEdit);
 
@@ -1086,7 +1249,7 @@ function exportCsv() {
 }
 
 function showMore() {
-  limit += 200;
+  limit += 500;
   renderCases();
 }
 
