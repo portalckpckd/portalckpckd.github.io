@@ -864,7 +864,7 @@ function gotoQueue(q) {
   renderCases();
 }
 
-var PRESETS = [ [ "kep", "Keputusan (ADM LKPB)", [ "created", "store", "pool", "sku", "desc", "qty", "subKondisi", "remarkLkpb", "fu", "remarkFu", "kepS2", "adm", "progress", "keputusan", "alasanCancel", "statusTarik", "noteKirim", "tglKirim", "remark" ] ], [ "tugu", "Tugu kirim–tarik (ADM Penerima)", [ "tglKirim", "noLc", "tuguNo", "statusTugu", "customer", "telp", "alamat", "sku", "desc", "qty", "lpn", "tglBalik", "admPenerima", "causedBy", "kategoriCacat", "remarkBap", "tglTarikUlang", "posisi", "pengajuanEx" ] ], [ "ex", "Ex-Tugu (WM)", [ "tglBalik", "lpn", "tuguNo", "sku", "desc", "skuGroup", "qty", "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ], [ "all", "Semua", null ] ];
+var PRESETS = [ [ "kep", "Keputusan (ADM LKPB)", [ "created", "store", "pool", "sku", "desc", "qty", "subKondisi", "remarkLkpb", "fu", "remarkFu", "kepS2", "adm", "progress", "keputusan", "alasanCancel", "statusTarik", "noteKirim", "tglKirim" ] ], [ "tugu", "Tugu kirim–tarik (ADM Penerima)", [ "tglKirim", "noLc", "tuguNo", "statusTugu", "customer", "telp", "alamat", "sku", "desc", "qty", "lpn", "tglBalik", "admPenerima", "causedBy", "kategoriCacat", "remarkBap", "tglTarikUlang", "posisi", "pengajuanEx" ] ], [ "ex", "Ex-Tugu (WM)", [ "tglBalik", "lpn", "tuguNo", "sku", "desc", "skuGroup", "qty", "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ], [ "all", "Semua", null ] ];
 
 var preset = "kep", mode = "table", dirty = {}, density = "compact", full = false;
 
@@ -1316,7 +1316,7 @@ function showMore() {
   renderCases();
 }
 
-var FORM = [ [ "n", "Keputusan", [ "adm", "progress", "keputusan", "alasanCancel", "statusTarik", "noteKirim", "remark" ] ], [ "g", "Tugu kirim–tarik", [ "admPenerima", "causedBy", "kategoriCacat", "posisi", "tglTarikUlang", "remarkBap", "pengajuanEx" ] ], [ "r", "Ex-Tugu", [ "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ] ];
+var FORM = [ [ "n", "Keputusan", [ "adm", "progress", "keputusan", "alasanCancel", "statusTarik", "noteKirim" ] ], [ "g", "Tugu kirim–tarik", [ "admPenerima", "causedBy", "kategoriCacat", "posisi", "tglTarikUlang", "remarkBap", "pengajuanEx" ] ], [ "r", "Ex-Tugu", [ "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ] ];
 
 function label(id) {
   var c = S.cols.filter((function(x) {
