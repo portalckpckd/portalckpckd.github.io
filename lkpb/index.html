@@ -745,7 +745,9 @@ function renderSummary() {
       return c.flag === f;
     })).length;
   };
-  $("tiles").innerHTML = [ [ "LKPB DK masuk", newC.length, "LK: " + lkN + " baris (tren saja)" ], [ "Kasus open", open.length, "semua periode" ], [ "Merah", red.length, "Late " + cnt("LATE") + " · Gagal tarik " + cnt("OUTSTANDING") + " · Lama " + cnt("TOO LONG"), "red" ], [ "KPI kirim tepat waktu", kpiSet.length ? Math.round(onTime / kpiSet.length * 100) + "%" : "–", onTime + " dari " + kpiSet.length + " jatuh tempo" ], [ "Selesai", done.length, "periode terpilih" ] ].map((function(t) {
+  $("tiles").innerHTML = [ [ "LKPB DK masuk", newC.length, "LK: " + lkN + " baris (tren saja) · Cancel: " + newC.filter((function(c) {
+    return c.keputusan === "LKPB Cancel";
+  })).length ], [ "Kasus open", open.length, "semua periode" ], [ "Merah", red.length, "Late " + cnt("LATE") + " · Gagal tarik " + cnt("OUTSTANDING") + " · Lama " + cnt("TOO LONG"), "red" ], [ "KPI kirim tepat waktu", kpiSet.length ? Math.round(onTime / kpiSet.length * 100) + "%" : "–", onTime + " dari " + kpiSet.length + " jatuh tempo" ], [ "Selesai", done.length, "periode terpilih" ] ].map((function(t) {
     return '<div class="tile ' + (t[3] || "") + '"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div><div class="s">' + esc(t[2]) + "</div></div>";
   })).join("");
   var maxS = Math.max(1, Math.max.apply(null, STAGES.map((function(s) {
@@ -862,7 +864,7 @@ function gotoQueue(q) {
   renderCases();
 }
 
-var PRESETS = [ [ "kep", "Keputusan (ADM LKPB)", [ "created", "store", "pool", "sku", "desc", "qty", "subKondisi", "remarkLkpb", "fu", "remarkFu", "kepS2", "adm", "progress", "keputusan", "statusTarik", "noteKirim", "tglKirim", "remark" ] ], [ "tugu", "Tugu kirim–tarik (ADM Penerima)", [ "tglKirim", "noLc", "tuguNo", "statusTugu", "customer", "telp", "alamat", "sku", "desc", "qty", "lpn", "tglBalik", "admPenerima", "causedBy", "kategoriCacat", "remarkBap", "tglTarikUlang", "posisi", "pengajuanEx" ] ], [ "ex", "Ex-Tugu (WM)", [ "tglBalik", "lpn", "tuguNo", "sku", "desc", "skuGroup", "qty", "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ], [ "all", "Semua", null ] ];
+var PRESETS = [ [ "kep", "Keputusan (ADM LKPB)", [ "created", "store", "pool", "sku", "desc", "qty", "subKondisi", "remarkLkpb", "fu", "remarkFu", "kepS2", "adm", "progress", "keputusan", "alasanCancel", "statusTarik", "noteKirim", "tglKirim", "remark" ] ], [ "tugu", "Tugu kirim–tarik (ADM Penerima)", [ "tglKirim", "noLc", "tuguNo", "statusTugu", "customer", "telp", "alamat", "sku", "desc", "qty", "lpn", "tglBalik", "admPenerima", "causedBy", "kategoriCacat", "remarkBap", "tglTarikUlang", "posisi", "pengajuanEx" ] ], [ "ex", "Ex-Tugu (WM)", [ "tglBalik", "lpn", "tuguNo", "sku", "desc", "skuGroup", "qty", "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ], [ "all", "Semua", null ] ];
 
 var preset = "kep", mode = "table", dirty = {}, density = "compact", full = false;
 
@@ -1020,7 +1022,7 @@ function renderQueues() {
 
 function stageChip(c) {
   var cls = c.stage === "5 DONE" ? "grn" : c.stage === "CLOSED" ? "gry" : "";
-  return '<span class="chip ' + cls + '">' + esc(STAGE_LABEL[c.stage] || c.stage) + "</span>";
+  return '<span class="chip ' + cls + '">' + esc(c.keputusan === "LKPB Cancel" ? "Cancel" + (c.alasanCancel ? " · " + c.alasanCancel : "") : STAGE_LABEL[c.stage] || c.stage) + "</span>";
 }
 
 function flagChip(c) {
@@ -1314,7 +1316,7 @@ function showMore() {
   renderCases();
 }
 
-var FORM = [ [ "n", "Keputusan", [ "adm", "progress", "keputusan", "statusTarik", "noteKirim", "remark" ] ], [ "g", "Tugu kirim–tarik", [ "admPenerima", "causedBy", "kategoriCacat", "posisi", "tglTarikUlang", "remarkBap", "pengajuanEx" ] ], [ "r", "Ex-Tugu", [ "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ] ];
+var FORM = [ [ "n", "Keputusan", [ "adm", "progress", "keputusan", "alasanCancel", "statusTarik", "noteKirim", "remark" ] ], [ "g", "Tugu kirim–tarik", [ "admPenerima", "causedBy", "kategoriCacat", "posisi", "tglTarikUlang", "remarkBap", "pengajuanEx" ] ], [ "r", "Ex-Tugu", [ "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ] ];
 
 function label(id) {
   var c = S.cols.filter((function(x) {
