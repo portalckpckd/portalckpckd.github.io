@@ -1088,7 +1088,7 @@ function renderCases() {
       return '<option value="' + esc(o) + '">';
     })).join("") + "</datalist>";
   }));
-  var head = '<tr><th class="fix cn">#</th><th class="fix c0">Tahap</th><th class="fix c1">LKPB / No Tugu</th>' + cols.map((function(id) {
+  var head = '<tr><th class="fix cn">#</th><th class="fix c0">Tahap</th><th class="fix c1">LKPB</th>' + cols.map((function(id) {
     var d = colDef(id);
     return '<th class="' + (d.manual ? "m-" + d.block : "") + '">' + esc(d.label) + (d.manual ? " ✎" : "") + "</th>";
   })).join("") + "</tr>";
@@ -1556,12 +1556,12 @@ function addFiles(list) {
           cellNF: true
         });
         wb.SheetNames.forEach((function(sn) {
-          var raw = sheetRows(wb.Sheets[sn]), rows = trimCols(raw);
+          var raw = sheetRows(wb.Sheets[sn]);
           files.push({
             file: f.name,
             sheet: wb.SheetNames.length > 1 ? sn : "",
-            rows: rows,
-            kind: guess(rows),
+            raw: raw,
+            kind: guess(raw.slice(0, 2)),
             n: Math.max(0, raw.length - 1)
           });
         }));
@@ -1569,7 +1569,7 @@ function addFiles(list) {
         files.push({
           file: f.name,
           sheet: "",
-          rows: [],
+          raw: [],
           kind: "",
           n: 0,
           err: err.message
@@ -1613,9 +1613,13 @@ function sendImport() {
     return {
       file: f.file,
       sheet: f.sheet,
-      rows: f.rows
+      rows: trimCols(f.raw)
     };
   }));
+  if (!(S.whitelist || []).length) {
+    msg("impOut", "err", "Data belum termuat. Tunggu sebentar lalu klik Import lagi.");
+    return;
+  }
   var go = $("impGo");
   go.disabled = true;
   go.textContent = "Memproses…";
