@@ -52,6 +52,8 @@ select:focus,input:focus,textarea:focus{border-color:var(--navy2)}
 .filters input[type=text]{flex:1;min-width:min(200px,100%)}
 .filters select,.filters input{max-width:100%}
 button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:10px 18px;cursor:pointer}
+a.btn{display:inline-flex;align-items:center;font-weight:700;border-radius:10px;padding:8px 14px;text-decoration:none;font-size:13.5px}
+a.btn.outline{height:auto}
 .primary{background:var(--navy);color:#fff;box-shadow:0 6px 18px rgba(2,56,118,.12)}
 .primary:disabled{background:#9fb0c8;cursor:default;box-shadow:none}
 .ghost{background:transparent;color:var(--navy)}
@@ -288,7 +290,17 @@ table.mini tr.click:hover td{background:var(--soft)}
 table.mini.rekap th.grp{border-bottom:1px solid var(--line);color:var(--navy)}
 table.mini.rekap td.z{color:var(--line)}
 table.mini.rekap tr.tot td{font-weight:800;border-top:2px solid var(--line);background:var(--soft)}
-table.mini.rekap td.sep,table.mini.rekap th.sep{border-left:1px solid var(--line)}
+table.mini.rekap td.sep,table.mini.rekap th.sep{border-left:2px solid var(--card)}
+table.mini.rekap th.grp{color:#fff;border-bottom:0;border-radius:8px 8px 0 0}
+table.mini.rekap th.grp.g0{background:#023876}table.mini.rekap th.grp.g1{background:#b8860b}table.mini.rekap th.grp.g2{background:#38761d}table.mini.rekap th.grp.g3{background:#990000}
+table.mini.rekap th.g0,table.mini.rekap td.g0{background:rgba(2,56,118,.07)}table.mini.rekap th.g1,table.mini.rekap td.g1{background:rgba(248,215,0,.12)}
+table.mini.rekap th.g2,table.mini.rekap td.g2{background:rgba(56,118,29,.08)}table.mini.rekap th.g3,table.mini.rekap td.g3{background:rgba(153,0,0,.07)}
+table.mini.rekap th.g0:not(.grp){color:#023876}table.mini.rekap th.g1:not(.grp){color:#8a6500}table.mini.rekap th.g2:not(.grp){color:#2c5e17}table.mini.rekap th.g3:not(.grp){color:#990000}
+table.mini.rekap tr:hover td{filter:brightness(.96)}
+table.mini.rekap tr.tot td.g0{background:rgba(2,56,118,.16)}table.mini.rekap tr.tot td.g1{background:rgba(248,215,0,.26)}table.mini.rekap tr.tot td.g2{background:rgba(56,118,29,.18)}table.mini.rekap tr.tot td.g3{background:rgba(153,0,0,.15)}
+:root[data-theme=dark] table.mini.rekap th.g0:not(.grp){color:#8fb8ef}:root[data-theme=dark] table.mini.rekap th.g1:not(.grp){color:#f3d75c}:root[data-theme=dark] table.mini.rekap th.g2:not(.grp){color:#8fd17a}:root[data-theme=dark] table.mini.rekap th.g3:not(.grp){color:#ff8a8a}
+:root[data-theme=dark] table.mini.rekap th.g0:not(.grp),:root[data-theme=dark] table.mini.rekap td.g0{background:rgba(77,143,224,.12)}:root[data-theme=dark] table.mini.rekap th.g1:not(.grp),:root[data-theme=dark] table.mini.rekap td.g1{background:rgba(248,215,0,.09)}
+:root[data-theme=dark] table.mini.rekap th.g2:not(.grp),:root[data-theme=dark] table.mini.rekap td.g2{background:rgba(123,211,137,.09)}:root[data-theme=dark] table.mini.rekap th.g3:not(.grp),:root[data-theme=dark] table.mini.rekap td.g3{background:rgba(255,100,100,.09)}
 .dbox{border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
 .dbox .dh3{font-size:12.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
 .dbig{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.dbig b{font-size:30px;font-weight:800;color:var(--navy);line-height:1.1}.dbig span{color:var(--muted);font-size:13px}
@@ -297,6 +309,12 @@ table.mini.rekap td.sep,table.mini.rekap th.sep{border-left:1px solid var(--line
 .dsec{font-size:12px;font-weight:800;color:var(--muted);margin:10px 0 2px}
 .stackbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--soft);margin:10px 0 6px}.stackbar i{display:block;height:100%}
 .dleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted)}.dleg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+.sk-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px}
+.sk-tiles>div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.sk-tiles .k{font-size:12px;color:var(--muted);font-weight:700}.sk-tiles .v{font-size:22px;font-weight:800;color:var(--navy);line-height:1.2}.sk-tiles .s{font-size:11.5px;color:var(--muted)}
+#dBody .card h3{margin:0 0 8px;font-size:14px;color:var(--navy)}
+#dBody table.mini td a{font-weight:700}
+.skchart .hl{fill:var(--soft)}
 #drChart .hl{fill:var(--soft)}
 #drChart .rl{paint-order:stroke;stroke:var(--card);stroke-width:4px;stroke-linejoin:round}
 </style>
@@ -418,6 +436,7 @@ table.mini.rekap td.sep,table.mini.rekap th.sep{border-left:1px solid var(--line
     </section>
 
     <section id="v-set" class="hidden">
+      <div class="card" id="sheetCard"><div class="cardhead"><div><h2>Spreadsheet</h2><p class="sub">Tempat semua data app disimpan. Hanya terlihat oleh Leader.</p></div><div class="daynav" id="sheetBtns"></div></div><div class="mini-wrap"><table class="mini" id="sheetT"></table></div></div>
       <div class="grid g2">
         <div class="card"><h2>User & PIN</h2><p class="sub">Leader: semua menu. Admin: import, edit kasus, daftar store.</p>
           <table class="t" id="userT"></table>
@@ -448,7 +467,7 @@ table.mini.rekap td.sep,table.mini.rekap th.sep{border-left:1px solid var(--line
   <div class="drawer">
     <div class="dh"><div class="t" id="dTitle"></div><div id="dSub" style="font-size:12.5px;opacity:.85"></div><button class="x" onclick="closeCase()">×</button></div>
     <div class="db" id="dBody"></div>
-    <div class="df"><span class="note" id="dNote"></span><button class="ghost" onclick="closeCase()">Tutup</button><button class="primary" id="dSave" onclick="saveCase()">Simpan</button></div>
+    <div class="df"><span class="note" id="dNote"></span><button class="ghost" onclick="closeCase()">Tutup</button><button class="outline hidden" id="dSku"></button><button class="primary" id="dSave" onclick="saveCase()">Simpan</button></div>
   </div>
 </div>
 
@@ -684,6 +703,7 @@ function loadAll() {
     S.cases = r.cases.map(toObj);
     S.checks = r.checks;
     S.now = r.now;
+    S.sheetInfo = r.sheetInfo || null;
     S.ship = r.ship || {
       daily: [],
       monthly: []
@@ -1075,6 +1095,105 @@ function openSku(sku) {
   renderCases();
 }
 
+function skuDetail(sku) {
+  var P = periodRange(), dc = $("fDc").value, info = S.skuInfo[sku] || [];
+  var all = lkpbAll(P.a, P.b, dc).filter((function(r) {
+    return r[3] === sku;
+  })), cnt = all.filter((function(r) {
+    return !r[8];
+  }));
+  var q = cnt.reduce((function(t, r) {
+    return t + r[5];
+  }), 0), dk = cnt.filter((function(r) {
+    return r[2] === "DK";
+  })).reduce((function(t, r) {
+    return t + r[5];
+  }), 0);
+  var agg = skuAgg(P.a, P.b, dc), rank = Object.keys(agg).sort((function(x, y) {
+    return agg[y].q - agg[x].q;
+  })), tot = rank.reduce((function(t, k) {
+    return t + agg[k].q;
+  }), 0);
+  var cases = filtered("fDc", "fSrc").filter((function(c) {
+    return c.sku === sku;
+  })), pc = cases.filter((function(c) {
+    return typeof c.created === "number" && ymd(c.created) >= P.a && ymd(c.created) <= P.b;
+  }));
+  var tile = function(k, v, s2) {
+    return '<div><div class="k">' + k + '</div><div class="v">' + v + '</div><div class="s">' + s2 + "</div></div>";
+  };
+  var h = '<div class="sk-tiles">' + tile("Qty LKPB", num(q), (rank.indexOf(sku) >= 0 ? "#" + (rank.indexOf(sku) + 1) + " dari " + rank.length + " SKU · " : "") + (tot ? Math.round(q / tot * 100) + "% dari total" : "")) + tile("DK / LK", num(dk) + " / " + num(q - dk), cnt.length + " baris LKPB") + tile("Tidak dihitung", all.length - cnt.length, "double / salah / cancel") + tile("Kasus DK open", cases.filter(isOpen).length, "semua periode · merah " + cases.filter(isRed).length) + "</div>";
+  var now = new Date, NM = [ "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des" ], ms = [];
+  for (var j = 11; j >= 0; j--) {
+    var f = new Date(now.getFullYear(), now.getMonth() - j, 1), l = new Date(f.getFullYear(), f.getMonth() + 1, 0);
+    ms.push({
+      lab: NM[f.getMonth()],
+      ym: ymd(f.getTime()).slice(0, 7),
+      q: lkpbIn(ymd(f.getTime()), ymd(l.getTime()), dc).filter((function(r) {
+        return r[3] === sku;
+      })).reduce((function(t, r) {
+        return t + r[5];
+      }), 0)
+    });
+  }
+  var mx = Math.max(1, Math.max.apply(null, ms.map((function(m) {
+    return m.q;
+  })))), W = 640, H = 150, cw = (W - 20) / 12, svg = "";
+  ms.forEach((function(m, i) {
+    var x = 10 + i * cw, bh = (H - 40) * m.q / mx, sel = m.ym === P.month;
+    if (sel) svg += '<rect class="hl" x="' + (x + 2) + '" y="4" width="' + (cw - 4) + '" height="' + (H - 8) + '" rx="6"/>';
+    svg += '<rect x="' + (x + cw * .22) + '" y="' + (H - 22 - bh) + '" width="' + cw * .56 + '" height="' + bh + '" rx="3" fill="#023876"><title>' + m.lab + ": " + m.q + "</title></rect>" + (m.q ? '<text x="' + (x + cw / 2) + '" y="' + (H - 26 - bh) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#14213d">' + m.q + "</text>" : "") + '<text x="' + (x + cw / 2) + '" y="' + (H - 6) + '" text-anchor="middle" font-size="11" fill="#5f6b80">' + m.lab + "</text>";
+  }));
+  h += '<div class="card"><h3>Tren qty LKPB 12 bulan</h3><svg class="skchart" viewBox="0 0 ' + W + " " + H + '" width="100%" style="max-height:170px">' + svg + "</svg></div>";
+  var subs = {};
+  cnt.forEach((function(r) {
+    var k = r[4] || "(kosong)";
+    subs[k] = (subs[k] || 0) + r[5];
+  }));
+  h += '<div class="card"><h3>Jenis kerusakan · ' + esc(P.label) + '</h3><div class="bars">' + hbars(subs, 10) + "</div></div>";
+  var kep = {}, stores = {};
+  pc.forEach((function(c) {
+    var k = c.keputusan || "Belum diputuskan";
+    kep[k] = (kep[k] || 0) + 1;
+    var st = String(c.store || "-");
+    stores[st] = (stores[st] || 0) + 1;
+  }));
+  h += '<div class="card"><h3>Kasus DK · ' + esc(P.label) + "</h3>" + (pc.length ? '<div class="grid g2"><div><div class="dsec">Keputusan</div><div class="bars">' + hbars(kep, 8) + '</div></div><div><div class="dsec">Toko terbanyak</div><div class="bars">' + hbars(stores, 5) + "</div></div></div>" : '<div class="empty">Tidak ada kasus DK di periode ini.</div>') + "</div>";
+  var KAT = {
+    "": "Dihitung",
+    DOUBLE: "Double",
+    SALAH: "Salah",
+    LAINNYA: "Cancel lain"
+  };
+  var keyOf = {};
+  cases.forEach((function(c) {
+    keyOf[c.lkpb] = c.key;
+  }));
+  h += '<div class="card"><h3>Daftar LKPB · ' + esc(P.label) + " (" + all.length + ")</h3>" + (all.length ? '<div class="mini-wrap"><table class="mini sku"><tr><th>Tanggal</th><th>LKPB</th><th>DK/LK</th><th>Sub kategori</th><th>Qty</th><th>Status</th></tr>' + all.slice().sort((function(x, y) {
+    return x[0] < y[0] ? 1 : -1;
+  })).slice(0, 100).map((function(r) {
+    var id = keyOf[r[6]] ? '<a href="#" class="mono" onclick="openCase(\'' + esc(keyOf[r[6]]) + "');return false\">" + esc(r[6]) + "</a>" : '<span class="mono">' + esc(r[6]) + "</span>";
+    return "<tr><td>" + dm(r[0]) + '</td><td class="l">' + id + "</td><td>" + r[2] + '</td><td class="l">' + esc(r[4] || "") + "</td><td>" + r[5] + '</td><td class="l">' + (r[8] ? '<span class="chip gry" title="' + esc(r[9] || "") + '">' + KAT[r[8]] + "</span>" : "Dihitung") + (r[10] ? '<div class="sd">S2: ' + esc(r[10]) + "</div>" : "") + "</td></tr>";
+  })).join("") + "</table></div>" : '<div class="empty">–</div>') + "</div>";
+  editing = null;
+  $("dTitle").textContent = sku + (info[0] ? " · " + info[0] : "");
+  $("dSub").textContent = grpLabel(info[1]) + " · " + P.label + (dc ? " · DC " + dc : " · semua DC");
+  $("dBody").innerHTML = h;
+  $("dNote").textContent = "";
+  $("dSave").classList.add("hidden");
+  var b = $("dSku");
+  b.classList.remove("hidden");
+  b.textContent = "Buka kasus di tab Kasus";
+  b.onclick = function() {
+    closeCase();
+    openSku(sku);
+  };
+  $("ovl").classList.remove("hidden");
+  document.body.style.overflow = "hidden";
+  var dw = document.querySelector("#ovl .drawer");
+  if (dw) dw.scrollTop = 0;
+}
+
 function renderTopSku(P, dc) {
   var m = skuAgg(P.a, P.b, dc), arr = Object.keys(m).map((function(k) {
     return m[k];
@@ -1083,7 +1202,7 @@ function renderTopSku(P, dc) {
   }));
   var top = arr.slice(0, 10);
   $("topSku").innerHTML = top.length ? '<div class="mini-wrap"><table class="mini sku"><tr><th>#</th><th>SKU</th><th>Qty</th><th>DK / LK</th><th>SKU Group</th><th>Jenis kerusakan utama</th></tr>' + top.map((function(x, i) {
-    return '<tr class="click" onclick="openSku(\'' + esc(x.sku) + '\')" title="Buka kasus DK untuk SKU ini"><td>' + (i + 1) + '</td><td class="l">' + skuCell(x.sku) + '</td><td class="rate">' + num(x.q) + "</td><td>" + num(x.dk) + " / " + num(x.lk) + '</td><td class="l">' + esc(grpLabel((S.skuInfo[x.sku] || [])[1])) + '</td><td class="l">' + topSubs(x, 2) + "</td></tr>";
+    return '<tr class="click" onclick="skuDetail(\'' + esc(x.sku) + '\')" title="Lihat ringkasan SKU ini"><td>' + (i + 1) + '</td><td class="l">' + skuCell(x.sku) + '</td><td class="rate">' + num(x.q) + "</td><td>" + num(x.dk) + " / " + num(x.lk) + '</td><td class="l">' + esc(grpLabel((S.skuInfo[x.sku] || [])[1])) + '</td><td class="l">' + topSubs(x, 2) + "</td></tr>";
   })).join("") + "</table></div>" : '<div class="empty">Belum ada data di periode ini.</div>';
 }
 
@@ -1408,9 +1527,9 @@ function rekapData() {
 
 function renderRekap() {
   var D = rekapData(), cols = [];
-  RK_COLS.forEach((function(g) {
+  RK_COLS.forEach((function(g, gi) {
     g[1].forEach((function(c, i) {
-      cols.push([ c[0], c[1], i === 0 ]);
+      cols.push([ c[0], c[1], i === 0, "g" + gi ]);
     }));
   }));
   var tot = {};
@@ -1419,19 +1538,19 @@ function renderRekap() {
       tot[c[0]] = (tot[c[0]] || 0) + (D.rows[k][c[0]] || 0);
     }));
   }));
-  var cell = function(v, sep) {
-    return '<td class="' + (v ? "" : "z") + (sep ? " sep" : "") + '">' + (v || 0) + "</td>";
+  var cell = function(v, c) {
+    return '<td class="' + c[3] + (v ? "" : " z") + (c[2] ? " sep" : "") + '">' + (v || 0) + "</td>";
   };
-  $("rkTable").innerHTML = '<tr><th rowspan="2">' + (D.by === "m" ? "Bulan" : D.by === "w" ? "Minggu" : "Tanggal") + "</th>" + RK_COLS.map((function(g) {
-    return '<th class="grp sep" colspan="' + g[1].length + '">' + g[0] + "</th>";
+  $("rkTable").innerHTML = '<tr><th rowspan="2">' + (D.by === "m" ? "Bulan" : D.by === "w" ? "Minggu" : "Tanggal") + "</th>" + RK_COLS.map((function(g, gi) {
+    return '<th class="grp sep g' + gi + '" colspan="' + g[1].length + '">' + g[0] + "</th>";
   })).join("") + "</tr>" + "<tr>" + cols.map((function(c) {
-    return '<th class="' + (c[2] ? "sep" : "") + '">' + c[1] + "</th>";
+    return '<th class="' + c[3] + (c[2] ? " sep" : "") + '">' + c[1] + "</th>";
   })).join("") + "</tr>" + D.keys.map((function(k) {
     return "<tr><td>" + rkLabel(k, D.by) + "</td>" + cols.map((function(c) {
-      return cell(D.rows[k][c[0]], c[2]);
+      return cell(D.rows[k][c[0]], c);
     })).join("") + "</tr>";
   })).join("") + '<tr class="tot"><td>Total</td>' + cols.map((function(c) {
-    return cell(tot[c[0]], c[2]);
+    return cell(tot[c[0]], c);
   })).join("") + "</tr>";
 }
 
@@ -1955,6 +2074,8 @@ function openCase(key) {
   }))[0];
   if (!c) return;
   editing = c;
+  $("dSave").classList.remove("hidden");
+  $("dSku").classList.add("hidden");
   $("dTitle").textContent = (c.lkpb || c.tuguNo) + (c.sumber === "HO" ? " (HO Sales)" : "");
   $("dSub").textContent = (c.desc || c.sku || "") + " · " + (c.store || "") + " · DC " + (c.dcAdmin || "");
   var info = [ [ "Tahap", stageChip(c) + " " + flagChip(c) ], [ "KPI", esc(c.kpi || "–") + " · jatuh tempo " + fmt(c.due, true) ], [ "Created", fmt(c.created, true) ], [ "No. Tugu / OD", '<span class="mono">' + esc(c.tuguNo || "–") + "</span>" ], [ "DO", '<span class="mono">' + esc(c.doNo || "–") + "</span>" ], [ "SKU", '<span class="mono">' + esc(c.sku || "") + "</span> · Qty " + esc(c.qty) + " · " + esc(c.skuGroup || "") ], [ "Kerusakan", esc(c.subKondisi || "–") + " — " + esc(c.remarkLkpb || "") ], [ "FU S2 / No. TTO", esc(c.fu || "–") + (c.remarkFu ? " — " + esc(c.remarkFu) : "") ], [ "Status Tugu", esc(c.statusTugu || "–") ], [ "Tanggal kirim", fmt(c.tglKirim, true) + (c.noLc ? ' · LC <span class="mono">' + esc(c.noLc) + "</span>" : "") ], [ "Customer", esc(c.customer || "–") ], [ "Telp", c.telp ? '<a href="tel:' + esc(String(c.telp).replace(/[^\d+]/g, "")) + '">' + esc(c.telp) + "</a>" : "–" ], [ "Alamat", esc(c.alamat || "–") ], [ "LPN hold", '<span class="mono">' + esc(c.lpn || "–") + "</span>" ], [ "Tanggal balik", fmt(c.tglBalik, true) ], [ "Penyebab", esc(c.cause || "–") ], [ "Hold released", esc(c.holdReleased || "–") ], [ "Lead time (hari)", "Kirim " + (c.ltKirim === "" ? "–" : c.ltKirim) + " · Balik " + (c.ltBalik === "" ? "–" : c.ltBalik) + " · Sertim " + (c.ltSertim === "" ? "–" : c.ltSertim) + " · End to end " + (c.e2e === "" ? "–" : c.e2e) ] ];
@@ -2277,6 +2398,14 @@ function renderLog(rows) {
 }
 
 function renderSettings() {
+  var si = S.sheetInfo;
+  $("sheetCard").classList.toggle("hidden", !si);
+  if (si) {
+    $("sheetBtns").innerHTML = '<a class="btn primary small" href="' + esc(si.url) + '" target="_blank" rel="noopener">↗ Buka ' + esc(si.name || "spreadsheet utama") + "</a>" + (si.shipUrl ? '<a class="btn outline small" href="' + esc(si.shipUrl) + '" target="_blank" rel="noopener">↗ Data pengiriman (DC portal)</a>' : "");
+    $("sheetT").innerHTML = '<tr><th class="l">Tab</th><th class="l">Isi</th><th>Baris</th><th>Update terakhir</th></tr>' + (si.tabs || []).map((function(t) {
+      return '<tr><td class="l mono">' + esc(t[0]) + '</td><td class="l">' + esc(t[1]) + "</td><td>" + num(t[2]) + "</td><td>" + (t[3] ? esc(t[3].at) + " · " + esc(t[3].who) : "–") + "</td></tr>";
+    })).join("");
+  }
   var names = Object.keys(S.lists || {}), cur = $("lName").value;
   $("lName").innerHTML = names.map((function(n) {
     return "<option" + (n === cur ? " selected" : "") + ">" + esc(n) + "</option>";
