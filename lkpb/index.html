@@ -265,6 +265,40 @@ svg text{font-family:inherit}
 :root[data-theme=dark] svg rect[fill="#023876"]{fill:#4d8fe0}
 :root[data-theme=dark] svg rect[fill="#8fb0dd"]{fill:#2f4a72}
 :root[data-theme=dark] .card,:root[data-theme=dark] nav.tabs button,:root[data-theme=dark] .ccard{box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.cardhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px 16px;flex-wrap:wrap;margin-bottom:6px}
+.mini-wrap{overflow-x:auto;margin-top:12px}
+table.mini{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+table.mini th{font-size:11.5px;color:var(--muted);font-weight:800;text-align:center;padding:6px 8px;border-bottom:2px solid var(--line);white-space:nowrap}
+table.mini td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+table.mini td:first-child,table.mini th:first-child{text-align:left}
+table.mini td.rate{font-weight:800;color:var(--navy)}
+table.mini tr.part td{color:var(--muted)}
+table.mini td.l,table.mini th.l{text-align:left}
+table.mini.sku td{vertical-align:top}
+table.mini.sku td.l{white-space:normal}
+table.mini .sd{font-size:12px;color:var(--muted);line-height:1.3;margin-top:1px}
+table.mini td.bad{color:var(--red)}
+table.mini tr.click{cursor:pointer}
+table.mini tr.click:hover td{background:var(--soft)}
+.tile .dl{font-weight:800}.tile .dl.bad{color:var(--red)}.tile .dl.good{color:var(--ok)}
+.tile.click{cursor:pointer;transition:.12s}.tile.click:hover{border-color:var(--navy2)}
+#dayCard .daynav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#dayCard .daynav input{width:auto;height:34px}
+#dayCard .daynav .field{min-width:0}#dayCard .daynav select{height:34px;width:auto}
+table.mini.rekap th.grp{border-bottom:1px solid var(--line);color:var(--navy)}
+table.mini.rekap td.z{color:var(--line)}
+table.mini.rekap tr.tot td{font-weight:800;border-top:2px solid var(--line);background:var(--soft)}
+table.mini.rekap td.sep,table.mini.rekap th.sep{border-left:1px solid var(--line)}
+.dbox{border:1px solid var(--line);border-radius:12px;padding:12px 14px;min-width:0}
+.dbox .dh3{font-size:12.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.dbig{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.dbig b{font-size:30px;font-weight:800;color:var(--navy);line-height:1.1}.dbig span{color:var(--muted);font-size:13px}
+.dline{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;padding:5px 0;border-bottom:1px dashed var(--line)}.dline:last-child{border-bottom:0}
+.dline b{font-weight:800}.dline.click{cursor:pointer}.dline.click:hover{color:var(--navy)}
+.dsec{font-size:12px;font-weight:800;color:var(--muted);margin:10px 0 2px}
+.stackbar{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--soft);margin:10px 0 6px}.stackbar i{display:block;height:100%}
+.dleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted)}.dleg i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+#drChart .hl{fill:var(--soft)}
+#drChart .rl{paint-order:stroke;stroke:var(--card);stroke-width:4px;stroke-linejoin:round}
 </style>
 <script>(function(){try{var t=localStorage.getItem("lkpb_theme")}catch(e){}if(!t)t=window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)})()</script>
 </head>
@@ -312,20 +346,30 @@ svg text{font-family:inherit}
       <div class="filterbar compact">
         <label class="field"><span class="lbl">DC</span><select id="fDc" onchange="renderAll()"><option value="">Semua DC</option><option>Cikupa</option><option>Cikande</option></select></label>
         <label class="field"><span class="lbl">Sumber</span><select id="fSrc" onchange="renderAll()"><option value="">LKPB + HO</option><option value="LKPB">LKPB</option><option value="HO">HO Sales</option></select></label>
-        <label class="field"><span class="lbl">Periode</span><select id="fPer" onchange="renderAll()"><option value="7">7 hari terakhir</option><option value="30" selected>30 hari terakhir</option><option value="m">Bulan ini</option></select></label>
+        <label class="field"><span class="lbl">Periode</span><select id="fPer" onchange="renderAll()"></select></label>
+        <button class="outline small" id="lkExp" onclick="exportLkpb()" style="align-self:flex-end;height:40px" title="Semua baris LKPB periode ini, dengan keterangan dihitung / double / salah / cancel">⬇ Export daftar LKPB</button>
       </div>
       <div class="tiles" id="tiles"></div>
+      <div class="card"><div class="cardhead"><div><h2>Defect rate</h2></div><div class="seg" id="drSeg"><button data-g="w">Mingguan</button><button data-g="m">Bulanan</button></div></div>
+        <div id="drChart"></div><p class="sub" id="drNote"></p></div>
+      <div class="card"><h2>Top 10 SKU</h2><div id="topSku"></div></div>
       <div class="grid g2">
-        <div class="card"><h2>Kasus open per tahap</h2><p class="sub">Merah = terlambat / gagal tarik / terlalu lama. Klik untuk membuka daftarnya.</p><div class="bars" id="stageBars"></div></div>
-        <div class="card"><h2>Perlu tindakan</h2><p class="sub">Kasus merah, paling lama di atas.</p><div class="list" id="redList"></div></div>
+        <div class="card"><h2>Jenis kerusakan</h2><p class="sub">Qty LKPB per sub kategori, periode terpilih (DK + LK)</p><div class="bars" id="subBars"></div></div>
+        <div class="card"><h2>SKU Group</h2><p class="sub" id="grpSub">Qty LKPB per SKU group, periode terpilih (DK + LK)</p><div class="bars" id="grpBars"></div></div>
       </div>
-      <div class="card"><h2>Tren LKPB per minggu</h2><p class="sub">Baris artikel LKPB yang masuk, DK dan LK (LK hanya untuk tren kerusakan).</p><div id="trendChart"></div></div>
-      <div class="grid g3">
-        <div class="card"><h2>Jenis kerusakan</h2><p class="sub">Sub kategori, periode terpilih (DK + LK)</p><div class="bars" id="subBars"></div></div>
-        <div class="card"><h2>SKU Group</h2><p class="sub">Periode terpilih (DK + LK)</p><div class="bars" id="grpBars"></div></div>
-        <div class="card"><h2>Penyebab (Maintain Hold)</h2><p class="sub">Handling / Vendor / Transport</p><div class="bars" id="causeBars"></div></div>
-      </div>
-      <div class="card"><h2>Beban per ADM</h2><p class="sub">Kasus open per admin; merah ikut dihitung terpisah.</p><div class="bars" id="admBars"></div></div>
+      <div class="card" id="dayCard"><div class="cardhead"><div><h2>Progres harian</h2><p class="sub" id="daySub"></p></div>
+        <div class="daynav"><button class="outline small" onclick="dayShift(-1)" aria-label="Hari sebelumnya">◀</button><input type="date" id="dayPick" onchange="renderDaily()"><button class="outline small" onclick="dayShift(1)" aria-label="Hari berikutnya">▶</button><button class="ghost small" onclick="dayShift(0)">Hari ini</button></div></div>
+        <div class="grid g3">
+          <div class="dbox"><div class="dh3">LKPB masuk</div><div id="dayIn"></div></div>
+          <div class="dbox"><div class="dh3">Tugu / FOC Sparepart</div><div id="dayDec"></div></div>
+          <div class="dbox"><div class="dh3">Ex-Tugu</div><div id="dayEx"></div></div>
+        </div>
+        <div class="cardhead" style="margin-top:16px"><div><h2>Rekap per hari</h2><p class="sub">Keputusan dihitung dari LKPB yang masuk di tanggal itu; kirim, balik dan Ex-Tugu dihitung dari kejadian di tanggal itu.</p></div>
+          <div class="daynav"><label class="field"><span class="lbl">Dari</span><input type="date" id="rkFrom" onchange="renderRekap()"></label><label class="field"><span class="lbl">Sampai</span><input type="date" id="rkTo" onchange="renderRekap()"></label>
+          <label class="field"><span class="lbl">Per</span><select id="rkBy" onchange="renderRekap()"><option value="d">Hari</option><option value="w">Minggu</option><option value="m">Bulan</option></select></label>
+          <label class="field"><span class="lbl">Cepat</span><select id="rkQuick" onchange="rkPreset(this.value)"><option value="">–</option><option value="7">7 hari terakhir</option><option value="14">14 hari terakhir</option><option value="30">30 hari terakhir</option><option value="m">Bulan ini</option><option value="pm">Bulan lalu</option></select></label>
+          <button class="outline small" onclick="rekapCsv()" style="align-self:flex-end">⬇ CSV</button></div></div>
+        <div class="mini-wrap"><table class="mini rekap" id="rkTable"></table></div></div>
     </section>
 
     <section id="v-cases" class="hidden">
@@ -387,7 +431,7 @@ svg text{font-family:inherit}
         </div>
         <div class="card"><h2>Daftar pilihan (dropdown)</h2><p class="sub">Satu nilai per baris. Dipakai di form edit kasus.</p>
           <select id="lName" onchange="showList()" style="width:100%"></select>
-          <textarea id="lVals" rows="10" style="width:100%;margin-top:8px"></textarea>
+          <textarea id="lVals" rows="10" style="width:100%;margin-top:8px"></textarea><p class="sub" id="lHint"></p>
           <div class="row"><button class="primary small" onclick="saveListVals()">Simpan daftar</button></div>
           <div id="lMsg"></div>
         </div>
@@ -638,10 +682,15 @@ function loadAll() {
     S.cfg = r.cfg;
     S.whitelist = r.whitelist;
     S.cases = r.cases.map(toObj);
-    S.trendCols = r.trendCols;
-    S.trend = r.trend;
     S.checks = r.checks;
     S.now = r.now;
+    S.ship = r.ship || {
+      daily: [],
+      monthly: []
+    };
+    S.lkpb = r.lkpb && r.lkpb.rows || [];
+    S.skuInfo = r.lkpb && r.lkpb.sku || {};
+    fillPeriods();
     renderLog(r.last);
     var d = new Date;
     $("upd").textContent = pad(d.getHours()) + ":" + pad(d.getMinutes());
@@ -684,10 +733,69 @@ function filtered(dcSel, srcSel) {
   }));
 }
 
-function periodStart() {
-  var v = $("fPer").value, now = new Date;
-  if (v === "m") return new Date(now.getFullYear(), now.getMonth(), 1).getTime();
-  return now.getTime() - +v * 864e5;
+var BULAN = [ "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember" ];
+
+function fillPeriods() {
+  var sel = $("fPer"), cur = sel.value || "30", now = new Date, h = '<option value="7">7 hari terakhir</option><option value="30">30 hari terakhir</option><option value="m">Bulan ini</option><optgroup label="Per bulan">';
+  for (var i = 1; i <= 12; i++) {
+    var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    h += '<option value="ym:' + ymd(d.getTime()).slice(0, 7) + '">' + BULAN[d.getMonth()] + " " + d.getFullYear() + "</option>";
+  }
+  sel.innerHTML = h + "</optgroup>";
+  sel.value = cur;
+  if (!sel.value) sel.value = "30";
+}
+
+function addDays(ds, n) {
+  var d = new Date(ds + "T00:00:00");
+  d.setDate(d.getDate() + n);
+  return ymd(d.getTime());
+}
+
+function periodRange(v) {
+  v = v || $("fPer").value || "30";
+  var now = new Date, today = ymd(now.getTime()), r;
+  if (v.indexOf("ym:") === 0) {
+    var y = +v.slice(3, 7), m = +v.slice(8, 10) - 1, f = new Date(y, m, 1), l = new Date(y, m + 1, 0), pf = new Date(y, m - 1, 1);
+    r = {
+      a: ymd(f.getTime()),
+      b: ymd(l.getTime()),
+      month: v.slice(3),
+      label: BULAN[m] + " " + y,
+      prevLab: BULAN[pf.getMonth()]
+    };
+    r.prev = function(k) {
+      var p = new Date(y, m - k, 1), q = new Date(y, m - k + 1, 0);
+      return [ ymd(p.getTime()), ymd(q.getTime()) ];
+    };
+  } else if (v === "m") {
+    var f2 = new Date(now.getFullYear(), now.getMonth(), 1);
+    r = {
+      a: ymd(f2.getTime()),
+      b: today,
+      month: today.slice(0, 7),
+      label: "bulan ini",
+      prevLab: "bulan lalu"
+    };
+    r.prev = function(k) {
+      var p = new Date(now.getFullYear(), now.getMonth() - k, 1), q = new Date(now.getFullYear(), now.getMonth() - k, Math.min(now.getDate(), new Date(now.getFullYear(), now.getMonth() - k + 1, 0).getDate()));
+      return [ ymd(p.getTime()), ymd(q.getTime()) ];
+    };
+  } else {
+    var n = +v;
+    r = {
+      a: addDays(today, -(n - 1)),
+      b: today,
+      label: n + " hari terakhir",
+      prevLab: n + " hari sebelumnya"
+    };
+    r.prev = function(k) {
+      return [ addDays(r.a, -n * k), addDays(r.b, -n * k) ];
+    };
+  }
+  r.from = new Date(r.a + "T00:00:00").getTime();
+  r.to = new Date(r.b + "T23:59:59").getTime();
+  return r;
 }
 
 function renderAll() {
@@ -715,79 +823,268 @@ function setView(v) {
   if (v === "set") loadUsers();
 }
 
+function lkpbAll(a, b, dc) {
+  return S.lkpb.filter((function(r) {
+    return r[0] >= a && r[0] <= b && (!dc || r[1] === dc);
+  }));
+}
+
+function lkpbIn(a, b, dc) {
+  return lkpbAll(a, b, dc).filter((function(r) {
+    return !r[8];
+  }));
+}
+
+function lkpbLast() {
+  var m = "";
+  S.lkpb.forEach((function(r) {
+    if (r[0] > m) m = r[0];
+  }));
+  return m;
+}
+
+function lkpbFirst() {
+  var m = "";
+  S.lkpb.forEach((function(r) {
+    if (!m || r[0] < m) m = r[0];
+  }));
+  return m;
+}
+
+function shipLast() {
+  var m = "";
+  (S.ship.daily || []).forEach((function(r) {
+    if (r[0] > m) m = r[0];
+  }));
+  return m;
+}
+
+function sumShip(a, b, dc) {
+  var o = 0, q = 0;
+  (S.ship.daily || []).forEach((function(r) {
+    if (r[0] >= a && r[0] <= b && (!dc || r[1] === dc)) {
+      o += r[2];
+      q += r[3];
+    }
+  }));
+  return {
+    o: o,
+    q: q
+  };
+}
+
+function sumLkpb(a, b, dc) {
+  var x = {
+    dk: 0,
+    lk: 0,
+    q: 0,
+    n: 0
+  };
+  lkpbIn(a, b, dc).forEach((function(r) {
+    x[r[2] === "LK" ? "lk" : "dk"] += r[5];
+    x.q += r[5];
+    x.n++;
+  }));
+  return x;
+}
+
+function num(n) {
+  return String(Math.round(n || 0)).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+}
+
+function dm(ds) {
+  return ds.slice(8) + "/" + ds.slice(5, 7);
+}
+
+function shipMonth(ym, dc) {
+  var o = 0, q = 0, hit = false;
+  (S.ship.monthly || []).forEach((function(r) {
+    if (r[0] === ym && (!dc || r[1] === dc)) {
+      o += r[2];
+      q += r[3];
+      hit = true;
+    }
+  }));
+  return hit ? {
+    o: o,
+    q: q
+  } : null;
+}
+
+function rateFor(a, b, dc, ym) {
+  var f0 = lkpbFirst(), f1 = lkpbLast(), sl = shipLast();
+  if (ym && f0 && f0 <= a && f1 >= b) {
+    var sm = shipMonth(ym, dc);
+    if (sm && sm.q) {
+      var lm = sumLkpb(a, b, dc);
+      return {
+        r: lm.q / sm.q * 100,
+        l: lm,
+        sh: sm,
+        a: a,
+        b: b
+      };
+    }
+  }
+  if (!f0 || !(S.ship.daily || []).length) return null;
+  if (a < f0) a = f0;
+  if (f1 && b > f1) b = f1;
+  if (sl && b > sl) b = sl;
+  if (a > b) return null;
+  var sh = sumShip(a, b, dc), l = sumLkpb(a, b, dc);
+  return sh.q ? {
+    r: l.q / sh.q * 100,
+    l: l,
+    sh: sh,
+    a: a,
+    b: b
+  } : null;
+}
+
+function delta(cur, prev, unit, upBad, lab) {
+  if (prev === null || prev === undefined || cur === null || cur === undefined) return "";
+  var d = cur - prev;
+  if (Math.abs(d) < (unit === "poin" ? .005 : .5)) return '<span class="dl">= sama dengan ' + esc(lab) + "</span>";
+  var bad = upBad ? d > 0 : d < 0;
+  return '<span class="dl ' + (bad ? "bad" : "good") + '">' + (d > 0 ? "▲ " : "▼ ") + (unit === "poin" ? Math.abs(d).toFixed(2) + " poin" : num(Math.abs(d))) + "</span> vs " + esc(lab);
+}
+
+function exportLkpb() {
+  var P = periodRange(), dc = $("fDc").value, rows = lkpbAll(P.a, P.b, dc).slice().sort((function(x, y) {
+    return x[0] < y[0] ? -1 : x[0] > y[0] ? 1 : String(x[6]).localeCompare(String(y[6]));
+  }));
+  if (!rows.length) {
+    toast("Tidak ada LKPB di periode ini");
+    return;
+  }
+  var KAT = {
+    "": "LKPB",
+    DOUBLE: "DOUBLE",
+    SALAH: "SALAH",
+    LAINNYA: "CANCEL LAIN"
+  };
+  var head = [ "Tanggal", "DC", "DK/LK", "LKPB No", "DO No", "SKU", "Deskripsi", "SKU Group", "Sub Kategori", "Qty", "Kategori", "Dihitung di defect rate", "Keterangan", "Remark FU (S2)" ];
+  var aoa = [ head ].concat(rows.map((function(r) {
+    var i = S.skuInfo[r[3]] || [];
+    return [ r[0], r[1], r[2], r[6], r[7], r[3], i[0] || "", grpLabel(i[1]), r[4], r[5], KAT[r[8]] || r[8], r[8] ? "Tidak" : "Ya", r[9] || "", String(r[10] || "").replace(/\s+/g, " ").trim() ];
+  })));
+  var q = function(v) {
+    v = v == null ? "" : String(v);
+    return /[",\n;]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  };
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([ "\ufeff" + aoa.map((function(r) {
+    return r.map(q).join(",");
+  })).join("\n") ], {
+    type: "text/csv;charset=utf-8"
+  }));
+  a.download = "daftar_lkpb_" + P.a + "_" + P.b + (dc ? "_" + dc : "") + ".csv";
+  a.click();
+}
+
 function renderSummary() {
-  var cs = filtered("fDc", "fSrc"), from = periodStart(), now = Date.now();
-  var inP = function(ms) {
-    return typeof ms === "number" && ms >= from && ms <= now;
+  var P = periodRange(), dc = $("fDc").value, cs = filtered("fDc", "fSrc"), pv = P.prev(1);
+  var inR = function(ms, a, b) {
+    if (typeof ms !== "number") return false;
+    var d = ymd(ms);
+    return d >= a && d <= b;
   };
   var newC = cs.filter((function(c) {
-    return inP(c.created);
+    return inR(c.created, P.a, P.b);
+  })), prevC = cs.filter((function(c) {
+    return inR(c.created, pv[0], pv[1]);
   }));
-  var dc = $("fDc").value;
-  var tr = S.trend.filter((function(r) {
-    return inP(r[0]) && (!dc || r[3] === dc);
-  }));
-  var lkN = tr.filter((function(r) {
+  var lkN = lkpbIn(P.a, P.b, dc).filter((function(r) {
     return r[2] === "LK";
   })).length;
-  var open = cs.filter(isOpen), red = cs.filter(isRed);
-  var kpiSet = cs.filter((function(c) {
-    return (c.kpi === "ON TIME" || c.kpi === "LATE") && inP(c.due);
-  }));
-  var onTime = kpiSet.filter((function(c) {
-    return c.kpi === "ON TIME";
-  })).length;
-  var done = cs.filter((function(c) {
-    return c.statusAkhir === "DONE" && (inP(c.sertim) || !c.sertim && inP(c.tglKirim));
-  }));
-  var cnt = function(f) {
-    return red.filter((function(c) {
-      return c.flag === f;
-    })).length;
-  };
-  $("tiles").innerHTML = [ [ "LKPB DK masuk", newC.length, "LK: " + lkN + " baris (tren saja) · Cancel: " + newC.filter((function(c) {
+  var open = cs.filter(isOpen);
+  var full = $("fPer").value.indexOf("ym:") === 0, dr = rateFor(P.a, P.b, dc, full ? P.month : null), drp = rateFor(pv[0], pv[1], dc, full ? pv[0].slice(0, 7) : null);
+  var tiles = [ [ "LKPB DK masuk", num(newC.length), "LK: " + num(lkN) + " line item · Cancel: " + newC.filter((function(c) {
     return c.keputusan === "LKPB Cancel";
-  })).length ], [ "Kasus open", open.length, "semua periode" ], [ "Merah", red.length, "Late " + cnt("LATE") + " · Gagal tarik " + cnt("OUTSTANDING") + " · Lama " + cnt("TOO LONG"), "red" ], [ "KPI kirim tepat waktu", kpiSet.length ? Math.round(onTime / kpiSet.length * 100) + "%" : "–", onTime + " dari " + kpiSet.length + " jatuh tempo" ], [ "Selesai", done.length, "periode terpilih" ] ].map((function(t) {
-    return '<div class="tile ' + (t[3] || "") + '"><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div><div class="s">' + esc(t[2]) + "</div></div>";
+  })).length, "", delta(newC.length, prevC.length, "", true, P.prevLab) ], [ "Kasus open", num(open.length), "semua periode · klik untuk daftar", "click", "", "gotoQueue('open')" ], [ "Defect rate", dr ? dr.r.toFixed(2) + "%" : "–", dr ? dr.b < P.b ? "data s/d " + dm(dr.b) : P.label : S.ship.error || "Data pengiriman / LKPB belum ada", "", dr && drp ? delta(dr.r, drp.r, "poin", true, P.prevLab) : "" ] ];
+  $("tiles").innerHTML = tiles.map((function(t) {
+    return '<div class="tile ' + t[3] + '"' + (t[5] ? ' onclick="' + t[5] + '"' : "") + '><div class="k">' + t[0] + '</div><div class="v">' + t[1] + '</div><div class="s">' + esc(t[2]) + "</div>" + (t[4] ? '<div class="s">' + t[4] + "</div>" : "") + "</div>";
   })).join("");
-  var maxS = Math.max(1, Math.max.apply(null, STAGES.map((function(s) {
-    return open.filter((function(c) {
-      return c.stage === s;
-    })).length;
-  }))));
-  $("stageBars").innerHTML = STAGES.map((function(s) {
-    var all = open.filter((function(c) {
-      return c.stage === s;
-    })), r = all.filter(isRed).length;
-    return '<div class="bar click" onclick="gotoQueue(\'' + s + '\')"><span class="lab">' + STAGE_LABEL[s] + '</span><span class="trk"><span class="fill" style="width:' + all.length / maxS * 100 + '%"></span><span class="fill r" style="width:' + r / maxS * 100 + '%"></span></span><span class="num">' + all.length + (r ? ' <small style="color:var(--red)">(' + r + ")</small>" : "") + "</span></div>";
-  })).join("") + '<div class="legend"><span><i style="background:var(--navy)"></i>Open</span><span><i style="background:var(--red)"></i>Merah</span></div>';
-  var top = red.slice().sort((function(a, b) {
-    return (b.aging || 0) - (a.aging || 0);
-  })).slice(0, 8);
-  $("redList").innerHTML = top.length ? top.map(itemHtml).join("") + (red.length > 8 ? '<div class="row" style="justify-content:flex-start"><button class="ghost small" onclick="gotoQueue(\'red\')">Lihat semua ' + red.length + " kasus merah →</button></div>" : "") : '<div class="empty">Tidak ada kasus merah. 👍</div>';
-  renderTrend(dc);
+  renderDefect(dc, P);
+  renderTopSku(P, dc);
   var subs = {}, grps = {};
-  tr.forEach((function(r) {
-    var s = r[11] || "(kosong)", g = r[8] || "(tanpa grup)";
-    subs[s] = (subs[s] || 0) + 1;
-    grps[g] = (grps[g] || 0) + 1;
+  lkpbIn(P.a, P.b, dc).forEach((function(r) {
+    var g = grpLabel((S.skuInfo[r[3]] || [])[1]);
+    subs[r[4] || "(kosong)"] = (subs[r[4] || "(kosong)"] || 0) + r[5];
+    grps[g] = (grps[g] || 0) + r[5];
   }));
   $("subBars").innerHTML = hbars(subs, 8);
   $("grpBars").innerHTML = hbars(grps, 8);
-  var causes = {};
-  newC.forEach((function(c) {
-    String(c.cause || "").split(", ").filter(String).forEach((function(x) {
-      causes[x] = (causes[x] || 0) + 1;
-    }));
+  renderDaily();
+  renderRekap();
+  $("grpSub").innerHTML = "Qty LKPB per SKU group, periode terpilih (DK + LK)" + (Object.keys(grpNames()).length ? "" : " · nama grup bisa diisi di Pengaturan → SKU Group");
+}
+
+function grpNames() {
+  var m = {};
+  ((S.lists || {})["SKU Group"] || []).forEach((function(l) {
+    var p = String(l).split(/\s*[=:|]\s*/);
+    if (p.length > 1 && p[0]) m[p[0].toUpperCase()] = p.slice(1).join(" ").trim();
   }));
-  $("causeBars").innerHTML = hbars(causes, 6, "Belum ada data hold di periode ini.");
-  var adm = {}, admR = {};
-  open.forEach((function(c) {
-    var a = c.adm || "(belum ada)";
-    adm[a] = (adm[a] || 0) + 1;
-    if (isRed(c)) admR[a] = (admR[a] || 0) + 1;
+  return m;
+}
+
+function grpLabel(code) {
+  if (!code) return "(tanpa grup)";
+  var n = grpNames()[String(code).toUpperCase()];
+  return n ? code + " · " + n : code;
+}
+
+function skuAgg(a, b, dc) {
+  var m = {};
+  lkpbIn(a, b, dc).forEach((function(r) {
+    if (!r[3]) return;
+    var x = m[r[3]] || (m[r[3]] = {
+      sku: r[3],
+      q: 0,
+      dk: 0,
+      lk: 0,
+      subs: {}
+    });
+    x.q += r[5];
+    x[r[2] === "LK" ? "lk" : "dk"] += r[5];
+    var sb = r[4] || "(kosong)";
+    x.subs[sb] = (x.subs[sb] || 0) + r[5];
   }));
-  $("admBars").innerHTML = hbars(adm, 10, "Tidak ada kasus open.", admR);
+  return m;
+}
+
+function topSubs(x, n) {
+  return Object.keys(x.subs).sort((function(p, q) {
+    return x.subs[q] - x.subs[p];
+  })).slice(0, n).map((function(k) {
+    return '<span class="chip gry" title="' + esc(k) + '">' + esc(k.length > 26 ? k.slice(0, 25) + "…" : k) + " " + Math.round(x.subs[k] / x.q * 100) + "%</span>";
+  })).join(" ");
+}
+
+function skuCell(sku) {
+  var i = S.skuInfo[sku] || [];
+  return '<span class="mono">' + esc(sku) + '</span><div class="sd">' + esc(i[0] || "") + "</div>";
+}
+
+function openSku(sku) {
+  $("q").value = sku;
+  queue = "all";
+  setView("cases");
+  renderQueues();
+  renderCases();
+}
+
+function renderTopSku(P, dc) {
+  var m = skuAgg(P.a, P.b, dc), arr = Object.keys(m).map((function(k) {
+    return m[k];
+  })).sort((function(p, q) {
+    return q.q - p.q;
+  }));
+  var top = arr.slice(0, 10);
+  $("topSku").innerHTML = top.length ? '<div class="mini-wrap"><table class="mini sku"><tr><th>#</th><th>SKU</th><th>Qty</th><th>DK / LK</th><th>SKU Group</th><th>Jenis kerusakan utama</th></tr>' + top.map((function(x, i) {
+    return '<tr class="click" onclick="openSku(\'' + esc(x.sku) + '\')" title="Buka kasus DK untuk SKU ini"><td>' + (i + 1) + '</td><td class="l">' + skuCell(x.sku) + '</td><td class="rate">' + num(x.q) + "</td><td>" + num(x.dk) + " / " + num(x.lk) + '</td><td class="l">' + esc(grpLabel((S.skuInfo[x.sku] || [])[1])) + '</td><td class="l">' + topSubs(x, 2) + "</td></tr>";
+  })).join("") + "</table></div>" : '<div class="empty">Belum ada data di periode ini.</div>';
 }
 
 function hbars(obj, n, emptyTxt, redObj) {
@@ -804,33 +1101,360 @@ function hbars(obj, n, emptyTxt, redObj) {
   })).join("");
 }
 
-function renderTrend(dc) {
-  var weeks = {}, order = [];
-  for (var i = 7; i >= 0; i--) {
-    var w = isoWeek(new Date(Date.now() - i * 7 * 864e5));
-    order.push(w);
-    weeks[w] = {
-      DK: 0,
-      LK: 0
-    };
+var drGrain = function() {
+  try {
+    return localStorage.getItem("lkpb_dr") || "m";
+  } catch (e) {
+    return "m";
   }
-  S.trend.forEach((function(r) {
-    if (weeks[r[1]] && (!dc || r[3] === dc)) weeks[r[1]][r[2] === "LK" ? "LK" : "DK"]++;
+}();
+
+document.addEventListener("click", (function(e) {
+  var b = e.target.closest("#drSeg button");
+  if (!b) return;
+  drGrain = b.getAttribute("data-g");
+  try {
+    localStorage.setItem("lkpb_dr", drGrain);
+  } catch (x) {}
+  renderDefect($("fDc").value, periodRange());
+}));
+
+var drRz;
+
+window.addEventListener("resize", (function() {
+  clearTimeout(drRz);
+  drRz = setTimeout((function() {
+    if (!$("v-sum").classList.contains("hidden") && S.ship) renderDefect($("fDc").value, periodRange());
+  }), 200);
+}));
+
+function drBuckets(dc) {
+  var out = [], now = new Date, last = shipLast(), NM = [ "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des" ];
+  if (drGrain === "w") {
+    for (var i = 11; i >= 0; i--) {
+      var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i * 7), dn = d.getDay() || 7;
+      var mon = new Date(d.getFullYear(), d.getMonth(), d.getDate() - dn + 1), sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6);
+      var a = ymd(mon.getTime()), b = ymd(sun.getTime()), w = isoWeek(mon);
+      out.push({
+        lab: w.slice(5),
+        full: w + " (" + dm(a) + "–" + dm(b) + ")",
+        a: a,
+        b: b,
+        part: !!last && b > last,
+        ship: sumShip(a, b, dc)
+      });
+    }
+  } else {
+    var mon2 = {};
+    (S.ship.monthly || []).forEach((function(r) {
+      if (!dc || r[1] === dc) {
+        var m = mon2[r[0]] || (mon2[r[0]] = {
+          o: 0,
+          q: 0
+        });
+        m.o += r[2];
+        m.q += r[3];
+      }
+    }));
+    for (var j = 11; j >= 0; j--) {
+      var f = new Date(now.getFullYear(), now.getMonth() - j, 1), l = new Date(f.getFullYear(), f.getMonth() + 1, 0), ym = ymd(f.getTime()).slice(0, 7);
+      out.push({
+        lab: NM[f.getMonth()] + (f.getMonth() === 0 || j === 11 ? " " + String(f.getFullYear()).slice(2) : ""),
+        full: NM[f.getMonth()] + " " + f.getFullYear(),
+        ym: ym,
+        a: ymd(f.getTime()),
+        b: ymd(l.getTime()),
+        part: j === 0,
+        ship: mon2[ym] || sumShip(ymd(f.getTime()), ymd(l.getTime()), dc)
+      });
+    }
+  }
+  var f0 = lkpbFirst(), f1 = lkpbLast();
+  out.forEach((function(x) {
+    x.noL = !f0 || x.b < f0 || x.a > f1;
+    if (!x.noL && (x.a < f0 || x.b > f1)) x.part = true;
+    x.l = sumLkpb(x.a, x.b, dc);
+    x.rate = x.ship.q && !x.noL ? x.l.q / x.ship.q * 100 : null;
   }));
-  var max = Math.max(1, Math.max.apply(null, order.map((function(w) {
-    return Math.max(weeks[w].DK, weeks[w].LK);
+  while (out.length > 1 && out[0].noL) out.shift();
+  while (out.length > 1 && out[out.length - 1].noL && !out[out.length - 1].ship.q) out.pop();
+  return out;
+}
+
+function renderDefect(dc, P) {
+  P = P || periodRange();
+  document.querySelectorAll("#drSeg button").forEach((function(b) {
+    b.classList.toggle("on", b.getAttribute("data-g") === drGrain);
+  }));
+  var bk = drBuckets(dc);
+  var maxQ = Math.max(1, Math.max.apply(null, bk.map((function(x) {
+    return x.l.q;
   }))));
-  var W = 760, H = 210, L = 34, B = 30, T = 14, cw = (W - L - 10) / order.length, bw = Math.min(26, cw / 3);
+  var maxR = Math.max(.01, Math.max.apply(null, bk.map((function(x) {
+    return x.rate || 0;
+  })))) * 1.25;
+  var W = Math.max(320, Math.round($("drChart").clientWidth || 760)), H = 240, L = 40, R = 52, B = 30, T = 22, cw = (W - L - R) / bk.length, bw = Math.min(34, cw * .5);
   var y = function(v) {
-    return T + (H - T - B) * (1 - v / max);
+    return T + (H - T - B) * (1 - v / maxQ);
+  }, yr = function(v) {
+    return T + (H - T - B) * (1 - v / maxR);
   };
-  var step = Math.max(1, Math.ceil(max / 4)), grid = "";
-  for (var g = 0; g <= max; g += step) grid += '<line x1="' + L + '" x2="' + (W - 6) + '" y1="' + y(g) + '" y2="' + y(g) + '" stroke="#dde3ee"/><text x="' + (L - 6) + '" y="' + (y(g) + 4) + '" text-anchor="end" font-size="11" fill="#5f6b80">' + g + "</text>";
-  var bars = order.map((function(w, i) {
-    var x = L + i * cw + cw / 2, d = weeks[w];
-    return '<rect x="' + (x - bw - 1) + '" y="' + y(d.DK) + '" width="' + bw + '" height="' + (H - B - y(d.DK)) + '" rx="3" fill="#023876"><title>' + w + " DK: " + d.DK + "</title></rect>" + '<rect x="' + (x + 1) + '" y="' + y(d.LK) + '" width="' + bw + '" height="' + (H - B - y(d.LK)) + '" rx="3" fill="#8fb0dd"><title>' + w + " LK: " + d.LK + "</title></rect>" + (d.DK ? '<text x="' + (x - bw / 2 - 1) + '" y="' + (y(d.DK) - 4) + '" text-anchor="middle" font-size="10.5" fill="#14213d">' + d.DK + "</text>" : "") + '<text x="' + x + '" y="' + (H - 10) + '" text-anchor="middle" font-size="11" fill="#5f6b80">' + w.slice(5) + "</text>";
+  var step = Math.max(1, Math.ceil(maxQ / 4)), grid = "";
+  for (var g = 0; g <= maxQ; g += step) grid += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(g) + '" y2="' + y(g) + '" stroke="#dde3ee"/><text x="' + (L - 6) + '" y="' + (y(g) + 4) + '" text-anchor="end" font-size="11" fill="#5f6b80">' + g + "</text>";
+  for (var k = 0; k <= 4; k++) {
+    var rv = maxR / 4 * k;
+    grid += '<text x="' + (W - R + 6) + '" y="' + (yr(rv) + 4) + '" font-size="11" fill="#5f6b80">' + rv.toFixed(2) + "%</text>";
+  }
+  var bars = "", pts = [], hl = "";
+  bk.forEach((function(x, i) {
+    var cx = L + i * cw + cw / 2, op = x.part ? ' opacity=".7"' : "";
+    if (drGrain === "m" ? x.ym === P.month : x.b >= P.a && x.a <= P.b) hl += '<rect class="hl" x="' + (L + i * cw + 2) + '" y="' + (T - 16) + '" width="' + (cw - 4) + '" height="' + (H - B - T + 16) + '" rx="6"/>';
+    bars += '<rect x="' + (cx - bw / 2) + '" y="' + y(x.l.dk) + '" width="' + bw + '" height="' + (H - B - y(x.l.dk)) + '" fill="#023876"' + op + "><title>" + x.full + " · LKPB DK " + x.l.dk + "</title></rect>" + '<rect x="' + (cx - bw / 2) + '" y="' + y(x.l.q) + '" width="' + bw + '" height="' + (y(x.l.dk) - y(x.l.q)) + '" fill="#8fb0dd"' + op + "><title>" + x.full + " · LKPB LK " + x.l.lk + "</title></rect>" + (cw >= 40 || i % 2 === (bk.length - 1) % 2 ? '<text x="' + cx + '" y="' + (H - 10) + '" text-anchor="middle" font-size="11" fill="#5f6b80">' + esc(cw >= 40 ? x.lab : x.lab.split(" ")[0]) + "</text>" : "");
+    if (x.rate !== null) pts.push([ cx, yr(x.rate), x ]);
+  }));
+  var line = pts.length > 1 ? '<polyline fill="none" stroke="#e31e43" stroke-width="2.5" points="' + pts.map((function(p) {
+    return p[0] + "," + p[1];
+  })).join(" ") + '"/>' : "";
+  line += pts.map((function(p, j) {
+    return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="4" fill="#e31e43"><title>' + p[2].full + " · " + p[2].rate.toFixed(2) + "% (" + num(p[2].l.q) + " ÷ " + num(p[2].ship.q) + ")</title></circle>" + (cw < 40 && (pts.length - 1 - j) % 2 ? "" : '<text class="rl" x="' + p[0] + '" y="' + (p[1] - 9) + '" text-anchor="middle" font-size="11" font-weight="800" fill="#e31e43">' + p[2].rate.toFixed(2) + "</text>");
   })).join("");
-  $("trendChart").innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" width="100%" role="img" aria-label="Tren LKPB per minggu">' + grid + bars + "</svg>" + '<div class="legend"><span><i style="background:var(--navy)"></i>DK</span><span><i style="background:var(--lk)"></i>LK</span></div>';
+  $("drChart").innerHTML = '<svg viewBox="0 0 ' + W + " " + H + '" width="' + W + '" height="' + H + '" style="max-width:100%;height:auto" role="img" aria-label="Defect rate">' + hl + grid + bars + line + "</svg>" + '<div class="legend"><span><i style="background:var(--navy)"></i>Qty LKPB DK</span><span><i style="background:var(--lk)"></i>Qty LKPB LK</span><span><i style="background:var(--red)"></i>Defect rate (%)</span></div>';
+  $("drNote").textContent = S.ship.error || "";
+}
+
+var STAGE_COL = {
+  "1 Keputusan": "#f8d700",
+  "2 Kirim": "#0a4a96",
+  "3 Tarik": "#8fb0dd",
+  "4 Di DC": "#e31e43",
+  "5 DONE": "#1e6b2a",
+  CLOSED: "#9aa3b2"
+};
+
+function dayShift(n) {
+  var el = $("dayPick"), cur = el.value || ymd(Date.now());
+  el.value = n === 0 ? ymd(Date.now()) : addDays(cur, n);
+  if (el.value > ymd(Date.now())) el.value = ymd(Date.now());
+  renderDaily();
+}
+
+function onDay(ms, d) {
+  return typeof ms === "number" && ymd(ms) === d;
+}
+
+function dline(lab, v, click, extra) {
+  return '<div class="dline' + (click ? ' click" onclick="' + click : "") + '"><span>' + lab + "</span><span><b>" + v + "</b>" + (extra || "") + "</span></div>";
+}
+
+function renderDaily() {
+  var el = $("dayPick");
+  if (!el.value) el.value = ymd(Date.now());
+  var d = el.value, dc = $("fDc").value, cs = filtered("fDc", "fSrc"), today = d === ymd(Date.now());
+  $("daySub").textContent = (today ? "Hari ini, " : "") + d.slice(8) + "/" + d.slice(5, 7) + "/" + d.slice(0, 4) + (dc ? " · DC " + dc : " · semua DC");
+  var inDay = cs.filter((function(c) {
+    return onDay(c.created, d);
+  }));
+  var lk = lkpbIn(d, d, dc).filter((function(r) {
+    return r[2] === "LK";
+  })).length;
+  var avg = 0;
+  for (var i = 1; i <= 7; i++) {
+    var dd = addDays(d, -i);
+    avg += cs.filter((function(c) {
+      return onDay(c.created, dd);
+    })).length;
+  }
+  avg = avg / 7;
+  var st = {};
+  inDay.forEach((function(c) {
+    st[c.stage] = (st[c.stage] || 0) + 1;
+  }));
+  var order = [ "1 Keputusan", "2 Kirim", "3 Tarik", "4 Di DC", "5 DONE", "CLOSED" ];
+  var bar = inDay.length ? '<div class="stackbar">' + order.filter((function(k) {
+    return st[k];
+  })).map((function(k) {
+    return '<i style="width:' + st[k] / inDay.length * 100 + "%;background:" + STAGE_COL[k] + '" title="' + STAGE_LABEL[k] + ": " + st[k] + '"></i>';
+  })).join("") + "</div>" + '<div class="dleg">' + order.filter((function(k) {
+    return st[k];
+  })).map((function(k) {
+    return '<span><i style="background:' + STAGE_COL[k] + '"></i>' + STAGE_LABEL[k] + " " + st[k] + "</span>";
+  })).join("") + "</div>" : "";
+  var done = (st["5 DONE"] || 0) + (st["CLOSED"] || 0);
+  $("dayIn").innerHTML = '<div class="dbig"><b>' + inDay.length + "</b><span>LKPB DK · LK " + lk + " line item</span></div>" + '<div class="sub" style="margin-top:2px">Rata-rata 7 hari sebelumnya: ' + avg.toFixed(1) + "/hari</div>" + bar + (inDay.length ? dline("Sudah diputuskan", inDay.length - (st["1 Keputusan"] || 0) + " / " + inDay.length) + dline("Selesai / ditutup", done + " / " + inDay.length) : '<div class="empty">Belum ada LKPB DK masuk.</div>');
+  var kep = {};
+  inDay.forEach((function(c) {
+    var k = c.keputusan || "Belum diputuskan";
+    kep[k] = (kep[k] || 0) + 1;
+  }));
+  var KO = [ "Tugu", "FOC Sparepart", "Repair", "Proses Koordinasi", "Tidak Ada Pergantian Barang", "LKPB Cancel", "Belum diputuskan" ];
+  var kepH = KO.filter((function(k) {
+    return kep[k];
+  })).concat(Object.keys(kep).filter((function(k) {
+    return KO.indexOf(k) < 0;
+  }))).map((function(k) {
+    return dline(esc(k), kep[k]);
+  })).join("");
+  var sent = cs.filter((function(c) {
+    return onDay(c.tglKirim, d);
+  }));
+  var sTugu = sent.filter((function(c) {
+    return c.keputusan !== "FOC Sparepart";
+  })).length, sFoc = sent.length - sTugu;
+  var due = cs.filter((function(c) {
+    return isOpen(c) && c.stage === "2 Kirim" && typeof c.due === "number" && ymd(c.due) <= d;
+  })).length;
+  $("dayDec").innerHTML = '<div class="dsec">Keputusan untuk LKPB hari itu</div>' + (kepH || '<div class="empty">–</div>') + '<div class="dsec">Dikirim hari itu</div>' + dline("Tugu (Infor)", sTugu) + dline("FOC Sparepart (TTO)", sFoc) + (today ? dline("Belum kirim, jatuh tempo s/d hari ini", due, due ? "gotoQueue('2 Kirim')" : "", "") : "");
+  var inDc = cs.filter((function(c) {
+    return isOpen(c) && c.stage === "4 Di DC";
+  }));
+  var age = [ 0, 0, 0 ];
+  inDc.forEach((function(c) {
+    var a = typeof c.tglBalik === "number" ? Math.floor((Date.now() - c.tglBalik) / 864e5) : 0;
+    age[a <= 2 ? 0 : a <= 7 ? 1 : 2]++;
+  }));
+  var back = cs.filter((function(c) {
+    return onDay(c.tglBalik, d);
+  })).length;
+  var proc = cs.filter((function(c) {
+    return onDay(c.sertim, d) || !c.sertim && onDay(c.workDate, d);
+  })), ex = {};
+  proc.forEach((function(c) {
+    var k = c.exTugu || "(belum diisi)";
+    ex[k] = (ex[k] || 0) + 1;
+  }));
+  $("dayEx").innerHTML = '<div class="dbig"><b>' + inDc.length + "</b><span>defect di DC saat ini</span></div>" + dline("≤ 2 hari", age[0]) + dline("3–7 hari", age[1]) + dline("> 7 hari (terlalu lama)", '<span style="color:' + (age[2] ? "var(--red)" : "inherit") + '">' + age[2] + "</span>", age[2] ? "gotoQueue('4 Di DC')" : "") + '<div class="dsec">Hari itu</div>' + dline("Barang balik ke DC", back) + dline("Ex-Tugu diproses", proc.length) + Object.keys(ex).sort((function(a, b) {
+    return ex[b] - ex[a];
+  })).map((function(k) {
+    return dline("&nbsp;&nbsp;· " + esc(k), ex[k]);
+  })).join("");
+}
+
+var RK_COLS = [ [ "LKPB masuk", [ [ "dk", "LKPB DK" ], [ "lk", "LK (line)" ] ] ], [ "Keputusan (LKPB tanggal itu)", [ [ "k_Tugu", "Tugu" ], [ "k_FOC Sparepart", "FOC Sparepart" ], [ "k_Repair", "Repair" ], [ "k_Proses Koordinasi", "Koordinasi" ], [ "k_Tidak Ada Pergantian Barang", "Tdk ada pergantian" ], [ "k_LKPB Cancel", "Cancel" ], [ "k_", "Belum" ] ] ], [ "Kirim", [ [ "sTugu", "Tugu" ], [ "sFoc", "FOC (TTO)" ] ] ], [ "Ex-Tugu", [ [ "back", "Balik ke DC" ], [ "proc", "Diproses" ] ] ] ];
+
+function rkPreset(v) {
+  var t = ymd(Date.now()), now = new Date;
+  if (v === "m") {
+    $("rkFrom").value = t.slice(0, 8) + "01";
+    $("rkTo").value = t;
+  } else if (v === "pm") {
+    var f = new Date(now.getFullYear(), now.getMonth() - 1, 1), l = new Date(now.getFullYear(), now.getMonth(), 0);
+    $("rkFrom").value = ymd(f.getTime());
+    $("rkTo").value = ymd(l.getTime());
+  } else if (v) {
+    $("rkFrom").value = addDays(t, -(+v - 1));
+    $("rkTo").value = t;
+  }
+  $("rkQuick").value = "";
+  renderRekap();
+}
+
+function rkKey(d, by) {
+  if (by === "m") return d.slice(0, 7);
+  if (by === "w") return isoWeek(new Date(d + "T00:00:00"));
+  return d;
+}
+
+function rkLabel(k, by) {
+  if (by === "m") return BULAN[+k.slice(5, 7) - 1] + " " + k.slice(0, 4);
+  if (by === "w") return k;
+  return k.slice(8) + "/" + k.slice(5, 7) + "/" + k.slice(0, 4);
+}
+
+function rekapData() {
+  if (!$("rkFrom").value) {
+    $("rkTo").value = ymd(Date.now());
+    $("rkFrom").value = addDays($("rkTo").value, -6);
+  }
+  var a = $("rkFrom").value, b = $("rkTo").value || ymd(Date.now()), by = $("rkBy").value, dc = $("fDc").value, cs = filtered("fDc", "fSrc");
+  if (a > b) {
+    var t = a;
+    a = b;
+    b = t;
+  }
+  var rows = {}, keys = [];
+  for (var d = b; d >= a; d = addDays(d, -1)) {
+    var k = rkKey(d, by);
+    if (!rows[k]) {
+      rows[k] = {};
+      keys.push(k);
+    }
+    if (keys.length > 400) break;
+  }
+  var add = function(ms, f) {
+    if (typeof ms !== "number") return;
+    var d = ymd(ms);
+    if (d < a || d > b) return;
+    var r = rows[rkKey(d, by)];
+    if (r) r[f] = (r[f] || 0) + 1;
+  };
+  cs.forEach((function(c) {
+    add(c.created, "dk");
+    add(c.created, "k_" + (c.keputusan || ""));
+    add(c.tglKirim, c.keputusan === "FOC Sparepart" ? "sFoc" : "sTugu");
+    add(c.tglBalik, "back");
+    add(typeof c.sertim === "number" ? c.sertim : c.workDate, "proc");
+  }));
+  lkpbIn(a, b, dc).forEach((function(r) {
+    if (r[2] !== "LK") return;
+    var x = rows[rkKey(r[0], by)];
+    if (x) x.lk = (x.lk || 0) + 1;
+  }));
+  return {
+    keys: keys,
+    rows: rows,
+    by: by
+  };
+}
+
+function renderRekap() {
+  var D = rekapData(), cols = [];
+  RK_COLS.forEach((function(g) {
+    g[1].forEach((function(c, i) {
+      cols.push([ c[0], c[1], i === 0 ]);
+    }));
+  }));
+  var tot = {};
+  D.keys.forEach((function(k) {
+    cols.forEach((function(c) {
+      tot[c[0]] = (tot[c[0]] || 0) + (D.rows[k][c[0]] || 0);
+    }));
+  }));
+  var cell = function(v, sep) {
+    return '<td class="' + (v ? "" : "z") + (sep ? " sep" : "") + '">' + (v || 0) + "</td>";
+  };
+  $("rkTable").innerHTML = '<tr><th rowspan="2">' + (D.by === "m" ? "Bulan" : D.by === "w" ? "Minggu" : "Tanggal") + "</th>" + RK_COLS.map((function(g) {
+    return '<th class="grp sep" colspan="' + g[1].length + '">' + g[0] + "</th>";
+  })).join("") + "</tr>" + "<tr>" + cols.map((function(c) {
+    return '<th class="' + (c[2] ? "sep" : "") + '">' + c[1] + "</th>";
+  })).join("") + "</tr>" + D.keys.map((function(k) {
+    return "<tr><td>" + rkLabel(k, D.by) + "</td>" + cols.map((function(c) {
+      return cell(D.rows[k][c[0]], c[2]);
+    })).join("") + "</tr>";
+  })).join("") + '<tr class="tot"><td>Total</td>' + cols.map((function(c) {
+    return cell(tot[c[0]], c[2]);
+  })).join("") + "</tr>";
+}
+
+function rekapCsv() {
+  var D = rekapData(), cols = [];
+  RK_COLS.forEach((function(g) {
+    g[1].forEach((function(c) {
+      cols.push([ c[0], g[0].split(" (")[0] + " - " + c[1] ]);
+    }));
+  }));
+  var lines = [ [ "Periode" ].concat(cols.map((function(c) {
+    return c[1];
+  }))).join(",") ].concat(D.keys.map((function(k) {
+    return [ rkLabel(k, D.by) ].concat(cols.map((function(c) {
+      return D.rows[k][c[0]] || 0;
+    }))).join(",");
+  })));
+  var el = document.createElement("a");
+  el.href = URL.createObjectURL(new Blob([ "\ufeff" + lines.join("\n") ], {
+    type: "text/csv;charset=utf-8"
+  }));
+  el.download = "rekap_lkpb_" + $("rkFrom").value + "_" + $("rkTo").value + ".csv";
+  el.click();
 }
 
 function isoWeek(d) {
@@ -1664,6 +2288,7 @@ function showList() {
   var n = $("lName").value;
   $("lVals").value = (S.lists[n] || []).join("\n");
   msg("lMsg", "", "");
+  $("lHint").textContent = n === "SKU Group" ? "Satu baris per grup: KODE = Nama, contoh: R110BR = Home Cleaning" : "";
 }
 
 function saveListVals() {
