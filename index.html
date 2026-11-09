@@ -676,6 +676,13 @@ function deliveryVia(o) {
  return cls + ty;
 }
 
+function showLT() {
+ var v = DATA && DATA.config && DATA.config.SHOW_LEAD_TIME;
+ return !/^(n|no|off|false|0)$/i.test(String(v == null ? "" : v).trim());
+}
+
+var LT_NOTE = "Delivery lead time: days from the truck leaving the DC to arrival at the site, with the goods already packed. Order processing before loading is not included.";
+
 function lcViaDuty(dc) {
  var v = DATA && DATA.config && DATA.config.LC_VIA_DUTY;
  v = v == null || v === "" ? "CIKANDE" : String(v);
@@ -1609,7 +1616,7 @@ function nbuild(o, s) {
   txt: "At DC " + o.dcName + " · " + (o.status || "being prepared")
  }; else if (!eta) phase = {
   k: "go",
-  txt: "Shipped · lead time not set in db_Store"
+  txt: "Shipped · on the way"
  }; else if (frac >= 1) phase = {
   k: "done",
   txt: "Should have arrived by " + fmtD(eta)
@@ -1701,12 +1708,12 @@ function journeyHtml(J) {
   var truck = J.o.shipped && J.frac < 1 && i === J.leg ? '<li class="truck-now"><i>🚚</i><div><b>' + esc(J.phase.txt) + "</b></div></li>" : "";
   return '<li class="' + st + '"><i></i><div><b>' + (p.x && p.x.store ? name : esc(name)) + "</b>" + (when ? "<span>" + esc(when) + "</span>" : "") + "</div></li>" + truck;
  }).join("");
- return '<h2 class="sec" style="margin-top:14px">Delivery journey <span class="tag" style="margin:0">estimate</span></h2>' + '<div class="jrn"><div class="jtop"><div><b>' + esc(J.phase.txt) + '</b><div class="sub">to ' + esc(s.dcDest ? titleCase(s.store) : nstoreName(s)) + (s.city ? " · " + esc(titleCase(s.city)) : "") + "</div></div>" + '<div class="jpct">' + pct + "<small>%</small></div></div>" + '<div class="jbar"><i style="width:' + pct + '%"></i></div>' + '<ol class="jst">' + steps + "</ol>" + '<div class="nkpi"><div><span>Shipped</span><b>' + esc(J.start ? fmtD(J.start) : "Not yet") + "</b></div><div><span>Estimated arrival</span><b>" + esc(J.eta ? fmtD(J.eta) : "—") + "</b></div>" + "<div><span>Lead time</span><b>" + esc(lt.big) + "</b></div>" + (days ? "<div><span>Delivery days</span><b>" + esc(days) + "</b></div>" : "") + "</div>" + '<button class="btn pri" data-jmap="1">View on network map</button>' + '<div class="sub" style="margin-top:6px">Estimated from the lead time and route in db_Store, not live GPS tracking.</div></div>';
+ return '<h2 class="sec" style="margin-top:14px">Delivery journey <span class="tag" style="margin:0">estimate</span></h2>' + '<div class="jrn"><div class="jtop"><div><b>' + esc(J.phase.txt) + '</b><div class="sub">to ' + esc(s.dcDest ? titleCase(s.store) : nstoreName(s)) + (s.city ? " · " + esc(titleCase(s.city)) : "") + "</div></div>" + '<div class="jpct">' + pct + "<small>%</small></div></div>" + '<div class="jbar"><i style="width:' + pct + '%"></i></div>' + '<ol class="jst">' + steps + "</ol>" + '<div class="nkpi"><div><span>Shipped</span><b>' + esc(J.start ? fmtD(J.start) : "Not yet") + "</b></div><div><span>Estimated arrival</span><b>" + esc(J.eta ? fmtD(J.eta) : "—") + "</b></div>" + (showLT() ? "<div><span>Delivery lead time</span><b>" + esc(lt.big) + "</b></div>" : "") + (days ? "<div><span>Delivery days</span><b>" + esc(days) + "</b></div>" : "") + "</div>" + '<button class="btn pri" data-jmap="1">View on network map</button>' + '<div class="sub" style="margin-top:6px">Estimated from the delivery lead time and route in db_Store, not live GPS tracking.</div></div>';
 }
 
 function renderNet() {
  var N = NET, h = "";
- h += '<div class="card"><h3>Delivery Network</h3><p class="muted" style="margin:0 0 10px">How goods travel from NDC to every store: route, transit DC, lead time and delivery days. Tap a store or a DC on the map.</p>' + '<div class="net-top"><div class="row nsearch"><input id="netQ" placeholder="Search store, site code, city or DC (e.g. J361, Medan, Sidoarjo)" autocomplete="off"><div class="nsug hidden" id="netSug"></div></div>' + '<div class="seg" id="netArea"><button data-a="ALL" class="on">All</button><button data-a="DK">Dalam Kota</button><button data-a="LK">Luar Kota</button></div></div>' + (LOK ? '<div class="net-map" id="netMap"></div><div class="net-note" id="netNote"></div>' : '<div class="notice">The interactive map could not be loaded on this network — routes are shown as a list below.</div>') + "</div>";
+ h += '<div class="card"><h3>Delivery Network</h3><p class="muted" style="margin:0 0 10px">How goods travel from the DC to every store: route, transit DC and delivery days. Tap a store or a DC on the map.</p>' + '<div class="net-top"><div class="row nsearch"><input id="netQ" placeholder="Search store, site code, city or DC (e.g. J361, Medan, Sidoarjo)" autocomplete="off"><div class="nsug hidden" id="netSug"></div></div>' + '<div class="seg" id="netArea"><button data-a="ALL" class="on">All</button><button data-a="DK">Dalam Kota</button><button data-a="LK">Luar Kota</button></div></div>' + (LOK ? '<div class="net-map" id="netMap"></div><div class="net-note" id="netNote"></div>' : '<div class="notice">The interactive map could not be loaded on this network — routes are shown as a list below.</div>') + "</div>";
  if (N.error) h += '<div class="notice">' + esc(N.error) + "</div>";
  h += '<div id="netPanel" class="npanel"></div><h2 class="sec" id="netCount">Stores</h2><div class="nlist" id="netList"></div>';
  $("netOut").innerHTML = h;
@@ -1865,7 +1872,7 @@ function renderSug(keepList) {
   if (it.kind === "store") {
    ic = '<span class="sg-ic st">' + esc(it.s.site) + "</span>";
    main = hl(nstoreName(it.s), NQ);
-   sub = esc(titleCase(it.s.city)) + " · " + esc(it.s.area || "") + " · " + esc(nlt(it.s).big);
+   sub = esc(titleCase(it.s.city)) + " · " + esc(it.s.area || "") + (showLT() ? " · " + esc(nlt(it.s).big) : "");
   } else if (it.kind === "city") {
    ic = '<span class="sg-ic ct">CITY</span>';
    main = hl(titleCase(it.city), NQ);
@@ -1913,7 +1920,7 @@ function netStores() {
 
 function storeRow(s) {
  var lt = nlt(s), i = NET.stores.indexOf(s);
- return '<button class="nrow' + (s === NSEL ? " on" : "") + '" data-i="' + i + '"><span class="s">' + esc(s.site) + '</span><span class="n"><div><b>' + esc(nstoreName(s)) + "</b></div>" + '<div class="sub">' + esc(titleCase(s.city)) + (s.type ? " · " + esc(s.type) : "") + " · " + (s.area === "DK" ? esc(nvia(s)) : esc(titleCase(s.coverage) || "—")) + "</div></span>" + '<span class="lt"><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '" style="margin:0">' + esc(s.area || "—") + "</span><small>" + esc(lt.big) + "</small></span></button>";
+ return '<button class="nrow' + (s === NSEL ? " on" : "") + '" data-i="' + i + '"><span class="s">' + esc(s.site) + '</span><span class="n"><div><b>' + esc(nstoreName(s)) + "</b></div>" + '<div class="sub">' + esc(titleCase(s.city)) + (s.type ? " · " + esc(s.type) : "") + " · " + (s.area === "DK" ? esc(nvia(s)) : esc(titleCase(s.coverage) || "—")) + "</div></span>" + '<span class="lt"><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '" style="margin:0">' + esc(s.area || "—") + "</span>" + (showLT() ? "<small>" + esc(lt.big) + "</small>" : "") + "</span></button>";
 }
 
 function renderNetList() {
@@ -1945,7 +1952,7 @@ function overviewCard() {
  N.stores.forEach(function(s) {
   c[s.area === "DK" ? "DK" : "LK"]++;
  });
- return '<div class="card"><div class="nkpi"><div><span>Stores</span><b>' + N.stores.length + "</b></div><div><span>Dalam Kota</span><b>" + c.DK + "</b></div>" + "<div><span>Luar Kota</span><b>" + c.LK + "</b></div><div><span>DC &amp; hubs</span><b>" + hubs.length + "</b></div>" + (lts.length ? "<div><span>Longest lead time</span><b>" + Math.max.apply(null, lts) + " days</b></div>" : "") + "</div></div>";
+ return '<div class="card"><div class="nkpi"><div><span>Stores</span><b>' + N.stores.length + "</b></div><div><span>Dalam Kota</span><b>" + c.DK + "</b></div>" + "<div><span>Luar Kota</span><b>" + c.LK + "</b></div><div><span>DC &amp; hubs</span><b>" + hubs.length + "</b></div>" + (lts.length && showLT() ? "<div><span>Longest delivery lead time</span><b>" + Math.max.apply(null, lts) + " days</b></div>" : "") + "</div></div>";
 }
 
 function selStore(s, J) {
@@ -1970,8 +1977,9 @@ function showStore(s, keepView) {
  }).slice(-1)[0] || {}).pt;
  var h = '<div class="card"><div class="hd"><div><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '">' + esc(narea(s.area)) + " · " + esc(nvia(s)) + "</span>" + "<h3>" + esc(nstoreName(s)) + '</h3><div class="sub"><span class="mono">' + esc(s.site) + "</span>" + (s.legacy ? " · Legacy " + esc(s.legacy) : "") + (s.city ? " · " + esc(titleCase(s.city)) : "") + (s.type ? " · " + esc(s.type) : "") + "</div></div>" + '<button class="btn" data-close="1">✕</button></div>';
  if (NJ) h += '<div class="jmini"><div class="jtop"><div><b>' + esc(NJ.phase.txt) + '</b><div class="sub">Order ' + esc(NJ.o.orderkey) + " · shipped " + esc(fmtD(NJ.start) || "—") + " · ETA " + esc(fmtD(NJ.eta) || "—") + '</div></div><div class="jpct">' + Math.round(NJ.frac * 100) + '<small>%</small></div></div><div class="jbar"><i style="width:' + Math.round(NJ.frac * 100) + '%"></i></div></div>';
- h += '<div class="nkpi"><div><span>Lead time</span><b>' + esc(lt.big) + "</b></div><div><span>Delivery days</span><b>" + esc(days || (s.area === "DK" ? "Every day" : "—")) + "</b></div>" + "<div><span>Covered by</span><b>" + esc(s.coverage && !s.direct ? titleCase(s.coverage) : cov ? titleCase(cov.name) : s.area === "DK" || s.direct ? titleCase(NET.origin ? NET.origin.name : "DC Cikupa") : "—") + "</b></div></div>";
- if (s.area === "DK") h += '<div class="nh"><div><b>H+0</b>Customer transaction</div><div><b>H+1</b>Order processed at NDC</div><div class="last"><b>H+2</b>Delivered to store / customer</div></div>';
+ h += '<div class="nkpi">' + (showLT() ? "<div><span>Delivery lead time</span><b>" + esc(lt.big) + "</b></div>" : "") + "<div><span>Delivery days</span><b>" + esc(days || (s.area === "DK" ? "Every day" : "—")) + "</b></div>" + "<div><span>Covered by</span><b>" + esc(s.coverage && !s.direct ? titleCase(s.coverage) : cov ? titleCase(cov.name) : s.area === "DK" || s.direct ? titleCase(NET.origin ? NET.origin.name : "DC Cikupa") : "—") + "</b></div></div>";
+ if (showLT()) h += '<div class="sub" style="margin:-4px 0 8px">' + esc(LT_NOTE) + "</div>";
+ if (s.area === "DK" && showLT()) h += '<div class="nh"><div><b>H+0</b>Customer transaction</div><div><b>H+1</b>Order processed at NDC</div><div class="last"><b>H+2</b>Delivered to store / customer</div></div>';
  h += '<h2 class="sec" style="margin-top:12px">Route</h2>';
  if (s.routes.length > 1 && !NJ) h += '<div class="nroutes">' + s.routes.map(function(r, i) {
   return '<button data-r="' + i + '" class="' + (i === NROUTE ? "on" : "") + '">Route ' + (i + 1) + (i ? " (alternative)" : "") + "</button>";
@@ -2004,7 +2012,7 @@ function showJourney(s, keepView) {
  var kind = s.threePL ? "Picked up by " + s.threePL + " · direct to customer" : s.destKind === "cust" ? s.viaHub ? "Via " + titleCase(s.viaHub) + " to customer" : rt.length > 2 ? "Via " + titleCase(rt[1].label) + " to customer" : "Direct to customer" : s.destKind === "hub" ? "To hub / DC" : "To store";
  var h = '<div class="card"><div class="hd"><div><span class="tag ' + (s.area === "DK" ? "dk" : "lk") + '">' + esc(narea(s.area)) + " · " + esc(kind) + "</span>" + "<h3>" + esc(ndest(s)) + '</h3><div class="sub">Order ' + esc(J ? J.o.orderkey : "") + (s.lc ? ' · LC <span class="mono">' + esc(s.lc) + "</span>" : "") + (s.lc && s.scheme ? " · " + esc(nscheme(s)) : "") + "</div></div>" + '<button class="btn" data-close="1">✕</button></div>';
  if (J) h += '<div class="jmini"><div class="jtop"><div><b>' + esc(J.phase.txt) + '</b><div class="sub">Shipped ' + esc(fmtD(J.start) || "—") + " · ETA " + esc(fmtD(J.eta) || "—") + '</div></div><div class="jpct">' + Math.round(J.frac * 100) + '<small>%</small></div></div><div class="jbar"><i style="width:' + Math.round(J.frac * 100) + '%"></i></div></div>';
- h += '<div class="nkpi"><div><span>Lead time</span><b>' + esc(s.threePL ? "Same day (" + s.threePL + ")" : s.area === "DK" ? NET.dkLt + " (DK)" : lt.big) + "</b></div>" + (s.jalur ? "<div><span>Truck route (JALUR)</span><b>" + esc(titleCase(s.jalur)) + "</b></div>" : "") + (days ? "<div><span>Delivery days</span><b>" + esc(days) + "</b></div>" : "") + "<div><span>Booked at store</span><b>" + esc(s.site || "—") + "</b></div></div>";
+ h += '<div class="nkpi">' + (!showLT() && !s.threePL ? "" : "<div><span>" + (s.threePL ? "Delivery" : "Delivery lead time") + "</span><b>" + esc(s.threePL ? "Same day (" + s.threePL + ")" : s.area === "DK" ? NET.dkLt + " (DK)" : lt.big) + "</b></div>") + (s.jalur ? "<div><span>Truck route (JALUR)</span><b>" + esc(titleCase(s.jalur)) + "</b></div>" : "") + (days ? "<div><span>Delivery days</span><b>" + esc(days) + "</b></div>" : "") + "<div><span>Booked at store</span><b>" + esc(s.site || "—") + "</b></div></div>";
  h += '<h2 class="sec" style="margin-top:12px">Route of this order</h2><div class="nchain">' + rt.map(function(x, i) {
   var lbl = x.store ? esc(ndest(s)) : esc(titleCase(x.label)), col = x.store ? "#fff" : NCOL[x.pt && x.pt.type || "HUB"];
   return (i ? '<span class="nar">→</span>' : "") + '<span class="nstop' + (x.store ? " end" : "") + '"' + (x.pt && !x.store ? ' data-p="' + NET.points.indexOf(x.pt) + '"' : "") + '><i style="background:' + col + '"></i><em>' + (i + 1) + "</em>" + lbl + "</span>";
@@ -2039,7 +2047,7 @@ function selHub(P) {
  var lts = st.map(function(s) {
   return parseFloat(s.lt);
  }).filter(isFinite);
- var h = '<div class="card"><div class="hd"><div><span class="tag dc">' + esc(P.type) + "</span><h3>" + esc(titleCase(P.name)) + "</h3>" + '<div class="sub">' + (st.length ? st.length + " store" + (st.length > 1 ? "s" : "") + " served through this point" + (lts.length ? " · lead time " + Math.min.apply(null, lts) + (Math.max.apply(null, lts) !== Math.min.apply(null, lts) ? "–" + Math.max.apply(null, lts) : "") + " days" : "") : "No store routes through this point yet") + (P.approx ? " · position approx. (city)" : "") + '</div></div><button class="btn" data-close="1">✕</button></div>';
+ var h = '<div class="card"><div class="hd"><div><span class="tag dc">' + esc(P.type) + "</span><h3>" + esc(titleCase(P.name)) + "</h3>" + '<div class="sub">' + (st.length ? st.length + " store" + (st.length > 1 ? "s" : "") + " served through this point" + (lts.length && showLT() ? " · delivery lead time " + Math.min.apply(null, lts) + (Math.max.apply(null, lts) !== Math.min.apply(null, lts) ? "–" + Math.max.apply(null, lts) : "") + " days" : "") : "No store routes through this point yet") + (P.approx ? " · position approx. (city)" : "") + '</div></div><button class="btn" data-close="1">✕</button></div>';
  if (P.hubs.length) h += hubContacts(P, "Contact");
  if (st.length) h += '<div class="nlist" style="margin-top:10px">' + st.map(storeRow).join("") + "</div>";
  h += "</div>";
@@ -2400,7 +2408,7 @@ function drawNet(fit) {
    fillColor: MCOL.STORE,
    fillOpacity: .9
   }).addTo(NLAY);
-  m.bindTooltip(s.site + " · " + nstoreName(s) + " · " + nlt(s).big, {
+  m.bindTooltip(s.site + " · " + nstoreName(s) + (showLT() ? " · " + nlt(s).big : ""), {
    className: "ntip",
    direction: "top",
    offset: [ 0, -5 ]
@@ -2413,7 +2421,7 @@ function drawNet(fit) {
  if (box) {
   if (NSEL) {
    var lt = nlt(NSEL), d = ndays(NSEL.days);
-   box.innerHTML = "<b>" + esc(NSEL.jr ? ndest(NSEL) : NSEL.dcDest ? titleCase(NSEL.store) : nstoreName(NSEL)) + '</b><div class="sub">' + esc(NSEL.jr ? nscheme(NSEL) : NSEL.site + (NSEL.city ? " · " + titleCase(NSEL.city) : "")) + "</div>" + '<div class="ni-g"><span>Lead time</span><b>' + esc(lt.big) + "</b>" + (d ? "<span>Delivery</span><b>" + esc(d) + "</b>" : "") + (NJ && NJ.eta ? "<span>ETA</span><b>" + esc(fmtD(NJ.eta)) + "</b>" : "") + "</div>" + (NJ ? '<div class="jbar sm"><i style="width:' + Math.round(NJ.frac * 100) + '%"></i></div><div class="sub">' + Math.round(NJ.frac * 100) + "% of the journey (est.)</div>" : "");
+   box.innerHTML = "<b>" + esc(NSEL.jr ? ndest(NSEL) : NSEL.dcDest ? titleCase(NSEL.store) : nstoreName(NSEL)) + '</b><div class="sub">' + esc(NSEL.jr ? nscheme(NSEL) : NSEL.site + (NSEL.city ? " · " + titleCase(NSEL.city) : "")) + "</div>" + '<div class="ni-g">' + (showLT() ? "<span>Delivery lead time</span><b>" + esc(lt.big) + "</b>" : "") + (d ? "<span>Delivery</span><b>" + esc(d) + "</b>" : "") + (NJ && NJ.eta ? "<span>ETA</span><b>" + esc(fmtD(NJ.eta)) + "</b>" : "") + "</div>" + (NJ ? '<div class="jbar sm"><i style="width:' + Math.round(NJ.frac * 100) + '%"></i></div><div class="sub">' + Math.round(NJ.frac * 100) + "% of the journey (est.)</div>" : "");
    box.style.display = "";
   } else if (hub) {
    box.innerHTML = "<b>" + esc(titleCase(hub.name)) + '</b><div class="sub">' + hub.stores.length + " stores served</div>";
