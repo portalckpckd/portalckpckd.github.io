@@ -338,30 +338,23 @@ function notFound(q) {
 
 function renderStats(st) {
  if (!st) return;
- var now = Date.now(), list = (st.updated || []).filter(function(u) {
+ var list = (st.updated || []).filter(function(u) {
   return u.at;
  });
  if (!list.length) {
   $("stats").classList.add("hidden");
   return;
  }
- var ago = function(u) {
-  if (!u.ts) return {
-   cls: "",
-   txt: u.at
+ var day = function(u) {
+  if (!u.ts) return String(u.at).replace(/\s+\d{1,2}:\d{2}$/, "");
+  var d = new Date(u.ts), t = new Date, y = new Date(t.getTime() - 864e5), same = function(a, b) {
+   return a.toDateString() === b.toDateString();
   };
-  var m = Math.max(0, Math.round((now - u.ts) / 6e4)), h = Math.floor(m / 60), d = Math.floor(h / 24);
-  var txt = m < 60 ? m < 2 ? "just now" : m + " min ago" : h < 24 ? h + " hour" + (h > 1 ? "s" : "") + " ago" : d + " day" + (d > 1 ? "s" : "") + " ago";
-  return {
-   cls: h < 6 ? "ok" : h < 24 ? "mid" : "old",
-   txt: txt
-  };
+  return same(d, t) ? "today" : same(d, y) ? "yesterday" : String(u.at).replace(/\s+\d{1,2}:\d{2}$/, "");
  };
- var chips = list.map(function(u) {
-  var a = ago(u);
-  return '<span class="fr ' + a.cls + '" title="Last upload ' + esc(u.at) + '"><i></i><b>' + esc(u.name) + "</b> " + esc(a.txt) + " <small>(" + esc(u.at) + ")</small></span>";
- }).join("");
- $("stats").innerHTML = '<div class="fresh"><div class="fr-h">🕒 Order status comes from WMS and is updated <b>manually by the DC team several times a day</b>, so the latest changes may take a few hours to appear.</div>' + '<div class="fr-l"><span class="sub">Last update</span>' + chips + "</div></div>";
+ $("stats").innerHTML = '<span class="st">Data updated: ' + list.map(function(u) {
+  return "<b>" + esc(u.name) + "</b> " + esc(day(u));
+ }).join(" · ") + "</span>";
  $("stats").classList.remove("hidden");
 }
 
