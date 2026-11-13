@@ -138,8 +138,18 @@ table.grid-t{border-collapse:separate;border-spacing:0;font-size:12.5px;min-widt
 .grid-t th.fix{position:sticky;z-index:3}
 .grid-t .cn{left:0;width:46px;min-width:46px;max-width:46px;text-align:center;color:var(--muted);font-size:11.5px;background:#f7f9fc!important}
 .grid-t th.cn{background:#012a5a!important;color:#cfd9e8}
-.grid-t .c0{left:46px;width:214px;min-width:214px;max-width:214px}.grid-t .c1{left:260px;min-width:180px;box-shadow:2px 0 0 var(--line)}
-@media (max-width:700px){.grid-t td.fix,.grid-t th.fix{position:static}.grid-t .c0{width:auto;min-width:0;max-width:none}}
+.grid-t .c0{min-width:150px;max-width:200px}
+.grid-t td.fd{white-space:nowrap;font-size:12.5px}.grid-t td.fa{text-align:center;font-weight:700}
+.grid-t .flast{box-shadow:2px 0 0 var(--line)}
+.grid-t th .thl{display:inline-flex;align-items:center;gap:6px;justify-content:center}
+.grid-t th .eye{background:none;border:0;padding:2px;margin:0;color:inherit;opacity:.35;cursor:pointer;line-height:0;border-radius:4px;box-shadow:none}
+.grid-t th .eye svg{width:14px;height:14px}
+.grid-t th:hover .eye{opacity:.8}.grid-t th .eye:hover{opacity:1;background:rgba(255,255,255,.18)}
+.hidbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px;font-size:12.5px}
+.hidbar .hb-t{display:inline-flex;align-items:center;gap:6px;color:var(--muted);font-weight:700}.hidbar .hb-t svg{width:14px;height:14px}
+.hidbar button{font:inherit;font-size:12.5px;padding:4px 10px;border-radius:999px;border:1px dashed var(--line);background:var(--soft);color:var(--text);cursor:pointer;box-shadow:none}
+.hidbar button:hover{border-color:var(--navy2);color:var(--navy)}.hidbar .hb-all{border-style:solid;color:var(--navy);font-weight:700;background:transparent}
+@media (max-width:700px){.grid-t td.fix,.grid-t th.fix{position:static!important}.grid-t .c0{min-width:0;max-width:none}}
 .grid-t td.m{background:#fffdf3;padding:2px 4px}
 .grid-t tr.dirty td.m{background:#fff6c2}
 .grid-t td.m select,.grid-t td.m input{font:inherit;font-size:12.5px;padding:5px 6px;border:1px solid transparent;border-radius:6px;background:transparent;min-width:120px;width:100%}
@@ -410,6 +420,7 @@ table.mini.rekap tr.tot td.g0{background:rgba(2,56,118,.16)}table.mini.rekap tr.
         <div class="qtabs" id="queues"></div>
         <div class="savebar hidden" id="saveBar"><span id="saveTxt"></span><span class="sp"></span>
           <button class="ghost small" onclick="discardEdits()">Batal</button><button class="primary small" id="saveAllBtn" onclick="saveEdits()">Simpan</button></div>
+        <div class="hidbar hidden" id="hidBar"></div>
         <div class="tblwrap" id="tblWrap"><table class="grid-t" id="caseTable"></table></div>
         <div class="cardgrid hidden" id="caseList"></div>
         <div class="row hidden" id="moreRow"><span class="muted" id="moreTxt" style="margin-right:auto"></span><button class="ghost" onclick="showMore()">Tampilkan lebih banyak</button></div>
@@ -841,6 +852,7 @@ function setView(v) {
     $("v-" + x).classList.toggle("hidden", x !== v);
   }));
   if (v === "set") loadUsers();
+  if (v === "cases") setTimeout(placeFixed, 0);
 }
 
 function lkpbAll(a, b, dc) {
@@ -1638,9 +1650,12 @@ function prefs() {
   }
 }
 
+var hiddenCols = prefs().hidden || {};
+
 function savePrefs() {
   try {
     localStorage.setItem("lkpb_prefs", JSON.stringify({
+      hidden: hiddenCols,
       preset: preset,
       mode: mode,
       density: density,
@@ -1685,17 +1700,95 @@ function initCaseUi() {
   }));
 }
 
+var FIXED_COLS = [ "created", "aging", "doNo", "tuguNo" ];
+
 function presetCols() {
   var p = PRESETS.filter((function(x) {
     return x[0] === preset;
   }))[0];
-  if (p && p[2]) return p[2];
-  return S.cols.map((function(c) {
+  var ids = p && p[2] ? p[2] : S.cols.map((function(c) {
     return c.id;
   })).filter((function(id) {
     return HIDE_COLS.indexOf(id) < 0;
   }));
+  var hid = hiddenCols[preset] || [];
+  return ids.filter((function(id) {
+    return FIXED_COLS.indexOf(id) < 0 && hid.indexOf(id) < 0;
+  }));
 }
+
+function fixedOn(id) {
+  return (hiddenCols[preset] || []).indexOf(id) < 0;
+}
+
+var EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+
+function eyeBtn(id) {
+  return '<button class="eye" data-hide="' + id + '" title="Sembunyikan kolom ini" aria-label="Sembunyikan kolom">' + EYE + "</button>";
+}
+
+function hideCol(id, on) {
+  var h = hiddenCols[preset] = hiddenCols[preset] || [];
+  if (on && h.indexOf(id) < 0) h.push(id);
+  if (!on) hiddenCols[preset] = id === "*" ? [] : h.filter((function(x) {
+    return x !== id;
+  }));
+  savePrefs();
+  renderCases();
+}
+
+document.addEventListener("click", (function(e) {
+  var b = e.target.closest("#caseTable .eye");
+  if (b) {
+    e.preventDefault();
+    e.stopPropagation();
+    hideCol(b.getAttribute("data-hide"), true);
+    return;
+  }
+  var u = e.target.closest("#hidBar [data-show]");
+  if (u) hideCol(u.getAttribute("data-show"), false);
+}), true);
+
+function renderHidBar() {
+  var h = hiddenCols[preset] || [], bar = $("hidBar");
+  bar.classList.toggle("hidden", !h.length || mode !== "table");
+  var lab = function(id) {
+    return {
+      created: "Created Date",
+      aging: "Aging",
+      doNo: "DO No",
+      tuguNo: "No Tugu / OD HO"
+    }[id] || colDef(id).label;
+  };
+  bar.innerHTML = '<span class="hb-t">' + EYE + " Kolom disembunyikan (" + h.length + "):</span>" + h.map((function(id) {
+    return '<button class="hb-c" data-show="' + id + '" title="Tampilkan lagi">' + esc(lab(id)) + " <b>＋</b></button>";
+  })).join("") + '<button class="hb-all" data-show="*">Tampilkan semua</button>';
+}
+
+function placeFixed() {
+  var t = $("caseTable"), ths = t.querySelectorAll("thead th.fix"), left = 0, css = "";
+  if (window.innerWidth <= 700) {
+    var o = $("fixCss");
+    if (o) o.textContent = "";
+    return;
+  }
+  if (!ths.length || !ths[0].getBoundingClientRect().width) return;
+  ths.forEach((function(th, i) {
+    css += "#caseTable .fx" + i + "{left:" + left + "px}";
+    left += th.getBoundingClientRect().width;
+  }));
+  var st = $("fixCss");
+  if (!st) {
+    st = document.createElement("style");
+    st.id = "fixCss";
+    document.head.appendChild(st);
+  }
+  st.textContent = css;
+}
+
+window.addEventListener("resize", (function() {
+  if ($("caseTable")) placeFixed();
+}));
 
 function colDef(id) {
   return S.cols.filter((function(c) {
@@ -1831,12 +1924,41 @@ function renderCases() {
       return '<option value="' + esc(o) + '">';
     })).join("") + "</datalist>";
   }));
-  var head = '<tr><th class="fix cn">#</th><th class="fix c0">Tahap</th><th class="fix c1">LKPB</th>' + cols.map((function(id) {
+  var FX = [ [ "created", "Created Date", "fd" ], [ "aging", "Aging", "fa" ], [ "doNo", "DO No", "" ], [ "tuguNo", "No Tugu / OD HO", "" ] ].filter((function(f) {
+    return fixedOn(f[0]);
+  }));
+  var fxTd = function(c, id) {
+    if (id === "created") return cellText("created", c.created);
+    if (id === "aging") return c.aging === "" || c.aging == null ? "–" : esc(c.aging);
+    if (id === "doNo") return '<span class="mono">' + esc(c.doNo || "") + "</span>";
+    return c.sumber === "HO" ? '<a href="#" class="id" data-key="' + esc(c.key) + '">' + esc(c.tuguNo) + "</a>" : '<span class="mono">' + esc(c.tuguNo || "") + "</span>";
+  };
+  var thx = function(id, label, cls) {
+    return '<th class="fix ' + cls + '"><span class="thl">' + esc(label) + eyeBtn(id) + "</span></th>";
+  };
+  var pre = FX.filter((function(f) {
+    return f[0] !== "tuguNo";
+  })), post = FX.filter((function(f) {
+    return f[0] === "tuguNo";
+  }));
+  var nFix = 3 + FX.length;
+  var head = '<tr><th class="fix cn fx0">#</th><th class="fix c0 fx1">Tahap</th>' + pre.map((function(f, i) {
+    return thx(f[0], f[1], "fx" + (2 + i));
+  })).join("") + '<th class="fix fx' + (2 + pre.length) + (post.length ? "" : " flast") + '">LKPB</th>' + post.map((function(f) {
+    return thx(f[0], f[1], "fx" + (3 + pre.length) + " flast");
+  })).join("") + cols.map((function(id) {
     var d = colDef(id);
-    return '<th class="' + (d.manual ? "m-" + d.block : "") + '">' + esc(d.label) + (d.manual ? " ✎" : "") + "</th>";
+    return '<th class="' + (d.manual ? "m-" + d.block : "") + '"><span class="thl">' + esc(d.label) + (d.manual ? " ✎" : "") + eyeBtn(id) + "</span></th>";
   })).join("") + "</tr>";
   var body = cs.slice(0, limit).map((function(c, ri) {
-    return '<tr class="' + (dirty[c.key] ? "dirty" : "") + '"><td class="fix cn">' + (ri + 1) + '</td><td class="fix c0">' + stageChip(c) + (c.flag ? " " + flagShort(c) : "") + "</td>" + '<td class="fix c1"><a href="#" class="id" data-key="' + esc(c.key) + '">' + esc(c.lkpb || c.tuguNo) + "</a>" + (c.sumber === "HO" ? ' <span class="chip gry">HO</span>' : "") + "</td>" + cols.map((function(id) {
+    var link = function(t) {
+      return '<a href="#" class="id" data-key="' + esc(c.key) + '">' + esc(t) + "</a>";
+    };
+    return '<tr class="' + (dirty[c.key] ? "dirty" : "") + '"><td class="fix cn fx0">' + (ri + 1) + '</td><td class="fix c0 fx1">' + stageChip(c) + (c.flag ? " " + flagShort(c) : "") + "</td>" + pre.map((function(f, i) {
+      return '<td class="fix ' + f[2] + " fx" + (2 + i) + '">' + fxTd(c, f[0]) + "</td>";
+    })).join("") + '<td class="fix fx' + (2 + pre.length) + (post.length ? "" : " flast") + '">' + (c.lkpb ? link(c.lkpb) : post.length ? '<span class="chip gry">HO</span>' : link(c.tuguNo) + ' <span class="chip gry">HO</span>') + "</td>" + post.map((function(f) {
+      return '<td class="fix fx' + (3 + pre.length) + ' flast">' + fxTd(c, f[0]) + "</td>";
+    })).join("") + cols.map((function(id) {
       var d = colDef(id);
       if (id === "tglKirim" && ttoEditable(c)) return '<td class="m" title="Kirim via TTO, isi tanggalnya">' + inputHtml(c, "tglKirimManual") + "</td>";
       if (d.manual) return '<td class="m' + (WIDE_INPUTS.indexOf(id) >= 0 ? " wide" : "") + '">' + inputHtml(c, id) + "</td>";
@@ -1845,7 +1967,9 @@ function renderCases() {
     })).join("") + "</tr>";
   })).join("");
   $("caseTable").classList.toggle("compact", density === "compact");
-  $("caseTable").innerHTML = "<thead>" + head + "</thead><tbody>" + (body || '<tr><td colspan="' + (cols.length + 3) + '" class="empty">Tidak ada kasus di filter ini.</td></tr>') + "</tbody>";
+  $("caseTable").innerHTML = "<thead>" + head + "</thead><tbody>" + (body || '<tr><td colspan="' + (cols.length + nFix) + '" class="empty">Tidak ada kasus di filter ini.</td></tr>') + "</tbody>";
+  placeFixed();
+  renderHidBar();
   var old = $("dlHost");
   if (old) old.remove();
   document.body.insertAdjacentHTML("beforeend", '<div id="dlHost" class="hidden">' + dls + "</div>");
@@ -2033,7 +2157,9 @@ window.addEventListener("beforeunload", (function(e) {
 }));
 
 function exportCsv() {
-  var cols = [ "stage", "flag", "lkpb" ].concat(presetCols()), cs = caseRowsFiltered();
+  var cols = [ "stage", "flag", "created", "aging", "doNo", "lkpb", "tuguNo" ].filter((function(id) {
+    return [ "created", "aging", "doNo", "tuguNo" ].indexOf(id) < 0 || fixedOn(id);
+  })).concat(presetCols()), cs = caseRowsFiltered();
   var q = function(v) {
     v = v == null ? "" : String(v);
     return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
