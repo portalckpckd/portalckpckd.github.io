@@ -325,6 +325,8 @@ table.mini.rekap tr.tot td.g0{background:rgba(2,56,118,.16)}table.mini.rekap tr.
 #dBody .card h3{margin:0 0 8px;font-size:14px;color:var(--navy)}
 #dBody table.mini td a{font-weight:700}
 .skchart .hl{fill:var(--soft)}
+#dBody table.mini td.rmk{min-width:200px;font-size:12.5px;line-height:1.4}
+#dBody table.mini.sku{min-width:0}
 #drChart .hl{fill:var(--soft)}
 #drChart .rl{paint-order:stroke;stroke:var(--card);stroke-width:4px;stroke-linejoin:round}
 </style>
@@ -995,10 +997,10 @@ function exportLkpb() {
     SALAH: "SALAH",
     LAINNYA: "CANCEL LAIN"
   };
-  var head = [ "Tanggal", "DC", "DK/LK", "LKPB No", "DO No", "SKU", "Deskripsi", "SKU Group", "Sub Kategori", "Qty", "Kategori", "Dihitung di defect rate", "Keterangan", "Remark FU (S2)" ];
+  var head = [ "Tanggal", "DC", "DK/LK", "LKPB No", "DO No", "SKU", "Deskripsi", "SKU Group", "Sub Kategori", "Qty", "Remark LKPB", "Kategori", "Dihitung di defect rate", "Keterangan", "Remark FU (S2)" ];
   var aoa = [ head ].concat(rows.map((function(r) {
     var i = S.skuInfo[r[3]] || [];
-    return [ r[0], r[1], r[2], r[6], r[7], r[3], i[0] || "", grpLabel(i[1]), r[4], r[5], KAT[r[8]] || r[8], r[8] ? "Tidak" : "Ya", r[9] || "", String(r[10] || "").replace(/\s+/g, " ").trim() ];
+    return [ r[0], r[1], r[2], r[6], r[7], r[3], i[0] || "", grpLabel(i[1]), r[4], r[5], r[11] || "", KAT[r[8]] || r[8], r[8] ? "Tidak" : "Ya", r[9] || "", String(r[10] || "").replace(/\s+/g, " ").trim() ];
   })));
   var q = function(v) {
     v = v == null ? "" : String(v);
@@ -1181,11 +1183,11 @@ function skuDetail(sku) {
   cases.forEach((function(c) {
     keyOf[c.lkpb] = c.key;
   }));
-  h += '<div class="card"><h3>Daftar LKPB · ' + esc(P.label) + " (" + all.length + ")</h3>" + (all.length ? '<div class="mini-wrap"><table class="mini sku"><tr><th>Tanggal</th><th>LKPB</th><th>DK/LK</th><th>Sub kategori</th><th>Qty</th><th>Status</th></tr>' + all.slice().sort((function(x, y) {
+  h += '<div class="card"><h3>Daftar LKPB · ' + esc(P.label) + " (" + all.length + ")</h3>" + (all.length ? '<div class="mini-wrap"><table class="mini sku"><tr><th>Tanggal</th><th class="l">LKPB</th><th class="l">Sub kategori</th><th>Qty</th><th class="l">Remark</th></tr>' + all.slice().sort((function(x, y) {
     return x[0] < y[0] ? 1 : -1;
   })).slice(0, 100).map((function(r) {
     var id = keyOf[r[6]] ? '<a href="#" class="mono" onclick="openCase(\'' + esc(keyOf[r[6]]) + "');return false\">" + esc(r[6]) + "</a>" : '<span class="mono">' + esc(r[6]) + "</span>";
-    return "<tr><td>" + dm(r[0]) + '</td><td class="l">' + id + "</td><td>" + r[2] + '</td><td class="l">' + esc(r[4] || "") + "</td><td>" + r[5] + '</td><td class="l">' + (r[8] ? '<span class="chip gry" title="' + esc(r[9] || "") + '">' + KAT[r[8]] + "</span>" : "Dihitung") + (r[10] ? '<div class="sd">S2: ' + esc(r[10]) + "</div>" : "") + "</td></tr>";
+    return "<tr><td>" + dm(r[0]) + '</td><td class="l">' + id + '<div class="sd">' + r[2] + '</div></td><td class="l">' + esc(r[4] || "") + "</td><td>" + r[5] + '</td><td class="l rmk">' + (r[8] ? '<span class="chip gry" title="' + esc(r[9] || "") + '">Tidak dihitung · ' + KAT[r[8]] + "</span><br>" : "") + esc(r[11] || "–") + (r[10] ? '<div class="sd">S2: ' + esc(r[10]) + "</div>" : "") + "</td></tr>";
   })).join("") + "</table></div>" : '<div class="empty">–</div>') + "</div>";
   editing = null;
   $("dTitle").textContent = sku + (info[0] ? " · " + info[0] : "");
