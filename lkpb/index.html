@@ -995,6 +995,8 @@ function exportLkpb() {
     "": "LKPB",
     DOUBLE: "DOUBLE",
     SALAH: "SALAH",
+    SR: "SR",
+    CUSTOK: "CUSTOMER OK",
     LAINNYA: "CANCEL LAIN"
   };
   var head = [ "Tanggal", "DC", "DK/LK", "LKPB No", "DO No", "SKU", "Deskripsi", "SKU Group", "Sub Kategori", "Qty", "Remark LKPB", "Kategori", "Dihitung di defect rate", "Keterangan", "Remark FU (S2)" ];
@@ -1177,6 +1179,8 @@ function skuDetail(sku) {
     "": "Dihitung",
     DOUBLE: "Double",
     SALAH: "Salah",
+    SR: "SR",
+    CUSTOK: "Customer OK",
     LAINNYA: "Cancel lain"
   };
   var keyOf = {};
@@ -1187,7 +1191,7 @@ function skuDetail(sku) {
     return x[0] < y[0] ? 1 : -1;
   })).slice(0, 100).map((function(r) {
     var id = keyOf[r[6]] ? '<a href="#" class="mono" onclick="openCase(\'' + esc(keyOf[r[6]]) + "');return false\">" + esc(r[6]) + "</a>" : '<span class="mono">' + esc(r[6]) + "</span>";
-    return "<tr><td>" + dm(r[0]) + '</td><td class="l">' + id + '<div class="sd">' + r[2] + '</div></td><td class="l">' + esc(r[4] || "") + "</td><td>" + r[5] + '</td><td class="l rmk">' + (r[8] ? '<span class="chip gry" title="' + esc(r[9] || "") + '">Tidak dihitung · ' + KAT[r[8]] + "</span><br>" : "") + esc(r[11] || "–") + (r[10] ? '<div class="sd">S2: ' + esc(r[10]) + "</div>" : "") + "</td></tr>";
+    return "<tr><td>" + dm(r[0]) + '</td><td class="l">' + id + '<div class="sd">' + r[2] + '</div></td><td class="l">' + esc(r[4] || "") + "</td><td>" + r[5] + '</td><td class="l rmk">' + (r[8] ? '<span class="chip gry" title="' + esc(r[9] || "") + '">Tidak dihitung · ' + KAT[r[8]] + "</span><br>" : r[9] ? '<span class="chip gry">' + esc(String(r[9]).replace("Ditutup (tetap dihitung): ", "Ditutup · ")) + "</span><br>" : "") + esc(r[11] || "–") + (r[10] ? '<div class="sd">S2: ' + esc(r[10]) + "</div>" : "") + "</td></tr>";
   })).join("") + "</table></div>" : '<div class="empty">–</div>') + "</div>";
   editing = null;
   $("dTitle").textContent = sku + (info[0] ? " · " + info[0] : "");
@@ -1621,11 +1625,11 @@ function gotoQueue(q) {
   renderCases();
 }
 
-var PRESETS = [ [ "kep", "Keputusan (ADM LKPB)", [ "created", "store", "pool", "sku", "desc", "qty", "subKondisi", "remarkLkpb", "fu", "remarkFu", "kepS2", "adm", "progress", "keputusan", "alasanCancel", "statusTarik", "noteKirim", "tglKirim" ] ], [ "tugu", "Tugu kirim–tarik (ADM Penerima)", [ "tglKirim", "noLc", "tuguNo", "statusTugu", "customer", "telp", "alamat", "sku", "desc", "qty", "lpn", "tglBalik", "admPenerima", "causedBy", "kategoriCacat", "remarkBap", "tglTarikUlang", "posisi", "pengajuanEx" ] ], [ "ex", "Ex-Tugu (WM)", [ "tglBalik", "lpn", "tuguNo", "sku", "desc", "skuGroup", "qty", "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ], [ "all", "Semua", null ] ];
+var PRESETS = [ [ "kep", "Keputusan (ADM LKPB)", [ "created", "store", "pool", "sku", "desc", "qty", "subKondisi", "remarkLkpb", "fu", "remarkFu", "kepS2", "adm", "progress", "keputusan", "statusTarik", "noteKirim", "tglKirim" ] ], [ "tugu", "Tugu kirim–tarik (ADM Penerima)", [ "tglKirim", "noLc", "tuguNo", "statusTugu", "customer", "telp", "alamat", "sku", "desc", "qty", "lpn", "tglBalik", "admPenerima", "causedBy", "kategoriCacat", "remarkBap", "tglTarikUlang", "posisi", "pengajuanEx" ] ], [ "ex", "Ex-Tugu (WM)", [ "tglBalik", "lpn", "tuguNo", "sku", "desc", "skuGroup", "qty", "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ], [ "all", "Semua", null ] ];
 
 var preset = "kep", mode = "table", dirty = {}, density = "compact", full = false;
 
-var HIDE_COLS = [ "key", "stage", "flag", "lkpb", "sumber", "dcAdmin", "dcFisik", "kpi", "due", "tto", "tglKirimManual" ];
+var HIDE_COLS = [ "key", "stage", "flag", "lkpb", "sumber", "dcAdmin", "dcFisik", "kpi", "due", "tto", "tglKirimManual", "alasanCancel" ];
 
 var LABELS = {
   remarkFu: "Remark FU / No. TTO",
@@ -2187,7 +2191,7 @@ function showMore() {
   renderCases();
 }
 
-var FORM = [ [ "n", "Keputusan", [ "adm", "progress", "keputusan", "alasanCancel", "statusTarik", "noteKirim" ] ], [ "g", "Tugu kirim–tarik", [ "admPenerima", "causedBy", "kategoriCacat", "posisi", "tglTarikUlang", "remarkBap", "pengajuanEx" ] ], [ "r", "Ex-Tugu", [ "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ] ];
+var FORM = [ [ "n", "Keputusan", [ "adm", "progress", "keputusan", "statusTarik", "noteKirim" ] ], [ "g", "Tugu kirim–tarik", [ "admPenerima", "causedBy", "kategoriCacat", "posisi", "tglTarikUlang", "remarkBap", "pengajuanEx" ] ], [ "r", "Ex-Tugu", [ "exTugu", "lastLoc", "toLoc", "qtyEx", "packaging", "sloc", "shift", "wm", "workDate", "sertim", "fisik", "prBuyer" ] ] ];
 
 function label(id) {
   var c = S.cols.filter((function(x) {
@@ -2211,7 +2215,7 @@ function openCase(key) {
     return "<dt>" + x[0] + "</dt><dd>" + x[1] + "</dd>";
   })).join("") + "</dl></div>";
   FORM.forEach((function(sec) {
-    html += '<div class="card"><div class="sec ' + sec[0] + '">' + sec[1] + '</div><div class="form">' + (sec[0] === "n" && ttoEditable(c) ? sec[2].concat("tglKirimManual") : sec[2]).map((function(id) {
+    html += '<div class="card"><div class="sec ' + sec[0] + '">' + sec[1] + '</div><div class="form">' + (sec[0] === "n" ? sec[2].concat(ttoEditable(c) ? [ "tglKirimManual" ] : [], c.sumber === "HO" || c.keputusan === "LKPB Cancel" ? [ "alasanCancel" ] : []) : sec[2]).map((function(id) {
       return fieldHtml(id, c[id]);
     })).join("") + "</div></div>";
   }));
