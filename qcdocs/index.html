@@ -52,6 +52,9 @@ input[readonly]{background:var(--soft)}
 .btn.navy{background:var(--navy);border-color:var(--navy);color:#fff}
 .btn.ok{background:var(--okc);border-color:var(--okc);color:#fff}
 .btn.sq{flex:0 0 52px;padding:0;font-size:20px}
+.pfx{display:flex;flex:1;min-width:0}
+.pfx span{display:flex;align-items:center;padding:0 12px;background:var(--navy);color:#fff;font-weight:800;font-size:16px;border-radius:10px 0 0 10px;letter-spacing:.03em}
+.pfx input{border-radius:0 10px 10px 0;border-left:0}
 .btn.full{width:100%;margin-top:12px}
 .btn.sm{padding:6px 10px;font-size:12.5px}
 .btn:disabled{opacity:.45;cursor:default}
@@ -126,12 +129,12 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:24px}
       <div id="stepSetup" class="card">
         <h3>Dokumentasi baru</h3>
         <div class="days" style="margin-top:8px">
-          <button id="mQC" class="daybtn on" onclick="setMode('QC')">QC Outbound</button>
+          <button id="mQC" class="daybtn on" onclick="setMode('QC')">QC Marketplace DC</button>
           <button id="mRETUR" class="daybtn" onclick="setMode('RETUR')">Unboxing Retur</button>
         </div>
         <span class="lbl">No. Invoice</span>
         <div class="row">
-          <input type="text" id="inv" placeholder="INV0000000" autocomplete="off" autocapitalize="characters">
+          <div class="pfx"><span>INV</span><input type="text" id="inv" placeholder="294205644" autocomplete="off" inputmode="numeric"></div>
           <button class="btn sq" id="scan_inv" onclick="scan('inv')" title="Scan barcode">📷</button>
         </div>
         <span class="lbl">SKU</span>
@@ -196,7 +199,7 @@ const BITRATE = 1200000;           // ~1.2 Mbps ≈ 9 MB per minute of video
 const FPS     = 25;
 // expected formats — scanner ignores other barcodes; typing a different format asks for confirmation
 const FORMAT = {
-  inv: {re: /^INV\d{4,}$/, hint: 'INV0000000'},
+  inv: {re: /^\d{4,}$/, hint: 'angka saja, mis. 294205644'},
   sku: {re: /^X?\d{4,}$/,  hint: '10486930 / X000000'}
 };
 
@@ -210,6 +213,9 @@ const el = id => document.getElementById(id);
 function toast(m, ms){ const t = el('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', ms || 3000); }
 function pad(n){ return String(n).padStart(2, '0'); }
 function nowStr(){ const d = new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()); }
+function modeLabel(m){ return m === 'QC' ? 'QC MARKETPLACE DC' : 'UNBOXING RETUR'; }
+// invoice number only: drops an INV prefix if typed/scanned, keeps the digits
+function invNum(v){ return cleanCode(v).replace(/^INV/, '').replace(/\D/g, ''); }
 function cleanCode(v){ return String(v || '').trim().toUpperCase().replace(/\s+/g, '').replace(/[^A-Z0-9\-_\/\.]/g, ''); }
 function mb(n){ return (n / 1048576).toFixed(1) + ' MB'; }
 function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
@@ -359,7 +365,7 @@ function stamp(x, w, h){
   const fs = Math.max(14, Math.round(h > w ? w / 22 : h / 24));
   x.font = 'bold ' + fs + 'px sans-serif';
   const p = Math.round(fs * 0.5), lh = Math.round(fs * 1.25), maxW = w - p * 2;
-  const src = [(S.c.mode === 'QC' ? 'QC OUTBOUND' : 'UNBOXING RETUR') + ' | INV ' + S.c.invoice,
+  const src = [modeLabel(S.c.mode) + ' | ' + S.c.invoice,
                (S.c.sku + ' ' + S.c.desc).trim(),
                nowStr() + ' | ' + SITE,
                S.operator];
@@ -383,7 +389,7 @@ async function scan(target){
   while (S.scanning){
     try {
       const r = await det.detect(el('video'));
-      const codes = r.map(b => cleanCode(b.rawValue)).filter(Boolean);
+      const codes = r.map(b => target === 'inv' ? invNum(b.rawValue) : cleanCode(b.rawValue)).filter(Boolean);
       const val = codes.find(c => FORMAT[target].re.test(c));
       if (val && val === prev){            // same value read twice in a row = no misread
         el(target).value = val; if (navigator.vibrate) navigator.vibrate(150); toast(target.toUpperCase() + ': ' + val);
@@ -423,11 +429,13 @@ async function lookupSku(){
 /* ===== case flow ===== */
 async function startCase(){
   if (S.c) return;
-  const invoice = cleanCode(el('inv').value), sku = cleanCode(el('sku').value), desc = el('desc').value.trim();
-  if (!invoice){ toast('Isi / scan nomor invoice dulu'); return; }
+  const invNo = invNum(el('inv').value), sku = cleanCode(el('sku').value), desc = el('desc').value.trim();
+  if (!invNo){ toast('Isi / scan nomor invoice dulu'); return; }
+  el('inv').value = invNo;
+  const invoice = 'INV' + invNo;
   if (!sku){ toast('Isi / scan SKU dulu'); return; }
   const odd = [];
-  if (!FORMAT.inv.re.test(invoice)) odd.push('Invoice "' + invoice + '" (biasanya ' + FORMAT.inv.hint + ')');
+  if (!FORMAT.inv.re.test(invNo)) odd.push('Invoice "' + invoice + '" (biasanya ' + FORMAT.inv.hint + ')');
   if (!FORMAT.sku.re.test(sku))     odd.push('SKU "' + sku + '" (biasanya ' + FORMAT.sku.hint + ')');
   const key = invoice + '|' + sku;
   if (odd.length && S.okOdd !== key){
@@ -439,7 +447,7 @@ async function startCase(){
   try {
     const r = await api('start', {invoice, sku, desc, mode: S.mode, operator: S.operator});
     S.c = r; S.photos = 0; S.videos = 0;
-    el('caseTag').textContent = r.mode === 'QC' ? 'QC OUTBOUND' : 'UNBOXING RETUR';
+    el('caseTag').textContent = modeLabel(r.mode);
     el('caseTag').className = 'tag ' + (r.mode === 'QC' ? 'qc' : 'retur');
     el('caseTitle').textContent = r.invoice + ' · ' + r.sku;
     el('caseInfo').textContent = r.name;
