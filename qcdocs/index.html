@@ -336,14 +336,37 @@ function draw(){
   S.raf = requestAnimationFrame(draw);
 }
 
+// splits text into lines that fit maxW (breaks at spaces / " | ", or mid-word if a word is too long)
+function wrapText(x, text, maxW){
+  const words = String(text).split(' '), out = [];
+  let line = '';
+  for (let wd of words){
+    const test = line ? line + ' ' + wd : wd;
+    if (x.measureText(test).width <= maxW){ line = test; continue; }
+    if (line) out.push(line);
+    while (x.measureText(wd).width > maxW && wd.length > 1){   // very long word
+      let k = wd.length; while (k > 1 && x.measureText(wd.slice(0, k)).width > maxW) k--;
+      out.push(wd.slice(0, k)); wd = wd.slice(k);
+    }
+    line = wd;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
 function stamp(x, w, h){
-  const fs = Math.max(14, Math.round(Math.min(w, h) / 24));
-  const lines = [(S.c.mode === 'QC' ? 'QC OUTBOUND' : 'UNBOXING RETUR') + ' | INV ' + S.c.invoice,
-                 (S.c.sku + ' ' + S.c.desc).trim(),
-                 nowStr() + ' | ' + SITE + ' | ' + S.operator];
-  const p = Math.round(fs * 0.5), lh = Math.round(fs * 1.25), bh = lines.length * lh + p * 2;
+  // portrait: base the size on the width so text stays readable but fits
+  const fs = Math.max(14, Math.round(h > w ? w / 22 : h / 24));
+  x.font = 'bold ' + fs + 'px sans-serif';
+  const p = Math.round(fs * 0.5), lh = Math.round(fs * 1.25), maxW = w - p * 2;
+  const src = [(S.c.mode === 'QC' ? 'QC OUTBOUND' : 'UNBOXING RETUR') + ' | INV ' + S.c.invoice,
+               (S.c.sku + ' ' + S.c.desc).trim(),
+               nowStr() + ' | ' + SITE,
+               S.operator];
+  const lines = [].concat(...src.map(t => wrapText(x, t, maxW)));
+  const bh = lines.length * lh + p * 2;
   x.fillStyle = 'rgba(0,0,0,.55)'; x.fillRect(0, h - bh, w, bh);
-  x.font = 'bold ' + fs + 'px sans-serif'; x.fillStyle = '#fff'; x.textBaseline = 'top';
+  x.fillStyle = '#fff'; x.textBaseline = 'top';
   lines.forEach((l, i) => x.fillText(l, p, h - bh + p + i * lh));
 }
 
