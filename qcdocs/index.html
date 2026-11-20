@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#000000">
+<title>QC Docs · DC Cikupa</title>
+<style>
+:root{--bg:#0f1115;--card:#1a1d24;--txt:#e9ecf1;--mut:#9aa3b2;--acc:#2f81f7;--ok:#2ea043;--bad:#e5534b;--warn:#d29922}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--txt);font-size:16px}
+header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;background:#000;gap:8px}
+header b{font-size:17px}
+small{color:var(--mut)}
+main{padding:12px;max-width:640px;margin:0 auto}
+.card{background:var(--card);border-radius:12px;padding:14px;margin-bottom:12px}
+.tabs{display:flex;gap:8px;margin-bottom:12px}
+.tabs button{flex:1}
+button{font:inherit;border:0;border-radius:10px;padding:14px;background:#2a2f3a;color:var(--txt);font-weight:600;cursor:pointer}
+button.pri{background:var(--acc)} button.ok{background:var(--ok)} button.bad{background:var(--bad)}
+button.on{outline:3px solid var(--acc)}
+button.link{background:none;padding:4px 0;color:#6cb6ff;font-weight:400;font-size:13px}
+button:disabled{opacity:.4}
+input[type=text],input[type=password],select{font:inherit;width:100%;padding:14px;border-radius:10px;border:1px solid #333a46;background:#0f1115;color:var(--txt)}
+input[readonly]{opacity:.85}
+.row{display:flex;gap:8px}.row>*{flex:1}
+#cam{position:relative;background:#000;border-radius:12px;overflow:hidden;display:none;margin-bottom:12px;transition:opacity .1s}
+#canvas{width:100%;display:block}
+#video{position:absolute;top:0;left:0;width:2px;height:2px;opacity:0;pointer-events:none}
+#recDot{position:absolute;top:10px;right:10px;background:var(--bad);color:#fff;padding:4px 10px;border-radius:20px;font-weight:700;display:none}
+.up{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:6px 0;border-bottom:1px solid #2a2f3a;gap:8px}
+.up span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.up .s{white-space:nowrap}
+.st-ok{color:var(--ok)} .st-bad{color:var(--bad)} .st-run{color:var(--warn)}
+.hide{display:none!important}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#000;border:1px solid #333;padding:10px 16px;border-radius:10px;display:none;max-width:92%;z-index:9}
+.lbl{color:var(--mut);font-size:13px;display:block;margin:0 0 6px}
+a{color:#6cb6ff}
+.res{padding:10px 0;border-bottom:1px solid #2a2f3a;font-size:14px}
+.res input{margin-top:6px;font-size:13px;padding:8px}
+</style>
+</head>
+<body>
+<header>
+  <div><b>QC Docs · DC Cikupa</b><br><small id="who">belum masuk</small> <button class="link hide" id="btnLogout" onclick="logout()">ganti</button></div>
+  <small id="net"></small>
+</header>
+<main>
+
+  <!-- login: PIN + operator -->
+  <section id="pLogin" class="card">
+    <span class="lbl">PIN DC</span>
+    <input type="password" id="pin" placeholder="Masukkan PIN" autocomplete="off" inputmode="text">
+    <button class="pri" style="width:100%;margin-top:8px" id="btnPin" onclick="checkPin()">Lanjut</button>
+    <div id="opBox" class="hide" style="margin-top:14px">
+      <span class="lbl">Nama operator</span>
+      <select id="opSel"></select>
+      <button class="ok" style="width:100%;margin-top:8px" onclick="chooseOperator()">Masuk</button>
+    </div>
+  </section>
+
+  <section id="pApp" class="hide">
+    <div class="tabs">
+      <button id="tabCap" class="on" onclick="tab('cap')">Dokumentasi</button>
+      <button id="tabFind" onclick="tab('find')">Cari Data</button>
+    </div>
+
+    <section id="pCap">
+      <div id="cam"><canvas id="canvas"></canvas><video id="video" muted playsinline autoplay></video><div id="recDot">● REC 00:00</div></div>
+
+      <div id="stepSetup" class="card">
+        <span class="lbl">Jenis dokumentasi</span>
+        <div class="row" style="margin-bottom:12px">
+          <button id="mQC" class="on" onclick="setMode('QC')">QC Outbound</button>
+          <button id="mRETUR" onclick="setMode('RETUR')">Unboxing Retur</button>
+        </div>
+        <span class="lbl">No. Invoice</span>
+        <div class="row" style="margin-bottom:10px">
+          <input type="text" id="inv" placeholder="Scan / ketik invoice" autocomplete="off" autocapitalize="characters" style="flex:3">
+          <button id="scan_inv" onclick="scan('inv')">📷</button>
+        </div>
+        <span class="lbl">SKU</span>
+        <div class="row" style="margin-bottom:10px">
+          <input type="text" id="sku" placeholder="Scan / ketik SKU" autocomplete="off" autocapitalize="characters" style="flex:3">
+          <button id="scan_sku" onclick="scan('sku')">📷</button>
+        </div>
+        <span class="lbl">Deskripsi barang</span>
+        <input type="text" id="desc" placeholder="Otomatis dari Master_SKU" autocomplete="off" readonly>
+        <small id="descInfo"></small>
+        <button id="btnStart" class="pri" style="width:100%;margin-top:12px" onclick="startCase()">Mulai</button>
+      </div>
+
+      <div id="stepCase" class="card hide">
+        <div style="margin-bottom:10px"><b id="caseTitle"></b><br><small id="caseInfo"></small></div>
+        <div id="liveCtl" class="row" style="margin-bottom:8px">
+          <button id="btnPhoto" onclick="takePhoto()">📸 Foto</button>
+          <button id="btnRec" class="bad" onclick="toggleRec()">⏺ Rekam</button>
+        </div>
+        <div id="fallbackCtl" class="hide">
+          <small style="color:var(--warn)">Kamera browser tidak tersedia — memakai kamera HP (tanpa stempel).</small>
+          <div class="row" style="margin:8px 0">
+            <button onclick="el('fPhoto').click()">📸 Foto</button>
+            <button onclick="el('fVideo').click()">🎥 Video</button>
+          </div>
+          <input type="file" id="fPhoto" accept="image/*" capture="environment" class="hide" onchange="nativeFile(this,'P')">
+          <input type="file" id="fVideo" accept="video/*" capture="environment" class="hide" onchange="nativeFile(this,'V')">
+        </div>
+        <button id="btnFinish" class="ok" style="width:100%" onclick="finishCase()">✅ Selesai</button>
+        <div style="margin-top:8px"><a id="folderLink" target="_blank" rel="noopener">Buka folder Drive</a></div>
+      </div>
+
+      <div class="card"><span class="lbl">Upload <small id="upMode"></small></span><div id="ups"><small>Belum ada file.</small></div></div>
+    </section>
+
+    <section id="pFind" class="hide">
+      <div class="card">
+        <input type="text" id="q" placeholder="Cari invoice / SKU / deskripsi" autocomplete="off">
+        <button class="pri" style="width:100%;margin-top:8px" onclick="find()">Cari</button>
+      </div>
+      <div id="results"></div>
+    </section>
+  </section>
+</main>
+<div id="toast"></div>
+
+<script>
+/* ===== settings ===== */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwyCQ8MkkoeWSVQ5MeZFBWK9LyMCAnDxtC92yrzQG1t1XpuSa12FiaGRO3GxeansKW51g/exec';  // https://script.google.com/macros/s/…/exec
+const SITE    = 'DC CIKUPA';
+const CHUNK   = 5 * 1024 * 1024;   // upload piece size, must be a multiple of 256 KB
+const BITRATE = 1200000;           // ~1.2 Mbps ≈ 9 MB per minute of video
+const FPS     = 25;
+// expected formats — scanner ignores other barcodes; typing a different format asks for confirmation
+const FORMAT = {
+  inv: {re: /^INV\d{4,}$/, hint: 'INV0000000'},
+  sku: {re: /^X?\d{4,}$/,  hint: '10486930 / X000000'}
+};
+
+/* ===== state ===== */
+const S = {mode:'QC', c:null, stream:null, raf:0, rec:null, recStart:0, recTimer:0,
+           photos:0, videos:0, uploaders:[], pin:'', operator:'', scanning:false, wake:null,
+           proxy:false, directOk:false, okOdd:''};
+const el = id => document.getElementById(id);
+
+/* ===== small helpers ===== */
+function toast(m, ms){ const t = el('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', ms || 3000); }
+function pad(n){ return String(n).padStart(2, '0'); }
+function nowStr(){ const d = new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+' '+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds()); }
+function cleanCode(v){ return String(v || '').trim().toUpperCase().replace(/\s+/g, '').replace(/[^A-Z0-9\-_\/\.]/g, ''); }
+function mb(n){ return (n / 1048576).toFixed(1) + ' MB'; }
+function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+function store(k, v){ try { v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch(e){} }
+function load(k){ try { return localStorage.getItem(k) || ''; } catch(e){ return ''; } }
+
+/* ===== backend call ===== */
+async function api(action, data){
+  // text/plain keeps this a "simple" request, so Apps Script needs no CORS preflight
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify(Object.assign({action: action, pin: S.pin}, data || {}))
+  });
+  if (!r.ok) throw new Error('Server ' + r.status);
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'Error');
+  return j.data;
+}
+
+/* ===== start-up & login ===== */
+window.onload = async () => {
+  el('pin').addEventListener('keydown', e => { if (e.key === 'Enter') checkPin(); });
+  el('inv').addEventListener('keydown', e => { if (e.key === 'Enter') el('sku').focus(); });
+  el('sku').addEventListener('keydown', e => { if (e.key === 'Enter') el('sku').blur(); });
+  el('sku').addEventListener('change', lookupSku);
+  el('desc').addEventListener('keydown', e => { if (e.key === 'Enter') startCase(); });
+  el('q').addEventListener('keydown', e => { if (e.key === 'Enter') find(); });
+  updNet(); window.addEventListener('online', updNet); window.addEventListener('offline', updNet);
+
+  if (API_URL.indexOf('https://') !== 0){ toast('API_URL belum diisi di index.html', 8000); return; }
+  const pin = load('qc_pin'), op = load('qc_operator');
+  if (pin){
+    S.pin = pin; el('pin').value = pin;
+    try {
+      const info = await api('info');
+      if (op && info.operators.indexOf(op) >= 0){ enterApp(op); return; }
+      showOperators(info.operators);
+    } catch(e){ toast(e.message, 5000); }
+  }
+};
+
+async function checkPin(){
+  S.pin = el('pin').value.trim();
+  if (!S.pin){ toast('Isi PIN'); return; }
+  el('btnPin').disabled = true;
+  try {
+    const info = await api('info');
+    store('qc_pin', S.pin);
+    showOperators(info.operators);
+  } catch(e){ toast(e.message, 5000); }
+  el('btnPin').disabled = false;
+}
+
+function showOperators(list){
+  const sel = el('opSel'); sel.innerHTML = '';
+  if (!list.length){ toast('Daftar operator kosong — isi tab "Operator" di spreadsheet', 6000); return; }
+  list.forEach(n => { const o = document.createElement('option'); o.value = o.textContent = n; sel.appendChild(o); });
+  const last = load('qc_operator'); if (list.indexOf(last) >= 0) sel.value = last;
+  el('opBox').classList.remove('hide');
+}
+
+function chooseOperator(){
+  const op = el('opSel').value; if (!op) return;
+  store('qc_operator', op); enterApp(op);
+}
+
+function enterApp(op){
+  S.operator = op;
+  el('who').textContent = op; el('btnLogout').classList.remove('hide');
+  el('pLogin').classList.add('hide'); el('pApp').classList.remove('hide');
+}
+
+function logout(){
+  if (S.c){ toast('Selesaikan dokumentasi dulu'); return; }
+  store('qc_operator', null);
+  el('pApp').classList.add('hide'); el('pLogin').classList.remove('hide'); el('btnLogout').classList.add('hide');
+  el('who').textContent = 'belum masuk';
+}
+
+function updNet(){ el('net').textContent = navigator.onLine ? '● Online' : '● Offline'; el('net').style.color = navigator.onLine ? 'var(--ok)' : 'var(--bad)'; }
+
+window.addEventListener('beforeunload', e => {
+  if (S.rec || S.uploaders.some(u => !u.done && !u.failed)) { e.preventDefault(); e.returnValue = ''; }
+});
+document.addEventListener('visibilitychange', async () => {
+  if (document.visibilityState === 'visible' && S.stream && 'wakeLock' in navigator) {
+    try { S.wake = await navigator.wakeLock.request('screen'); } catch(e){}
+  }
+});
+
+function tab(t){
+  el('pCap').classList.toggle('hide', t !== 'cap'); el('pFind').classList.toggle('hide', t !== 'find');
+  el('tabCap').classList.toggle('on', t === 'cap'); el('tabFind').classList.toggle('on', t === 'find');
+}
+function setMode(m){
+  if (S.c) return;
+  S.mode = m; el('mQC').classList.toggle('on', m === 'QC'); el('mRETUR').classList.toggle('on', m === 'RETUR');
+}
+
+/* ===== camera ===== */
+async function openCamera(){
+  if (S.stream) return true;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return false;
+  const v = {facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}};
+  try { S.stream = await navigator.mediaDevices.getUserMedia({video:v, audio:true}); }
+  catch(e){
+    try { S.stream = await navigator.mediaDevices.getUserMedia({video:v}); toast('Mikrofon tidak diizinkan — video tanpa suara', 4000); }
+    catch(e2){ console.warn(e2); return false; }
+  }
+  const vid = el('video'); vid.srcObject = S.stream; try { await vid.play(); } catch(e){}
+  el('cam').style.display = 'block';
+  draw();
+  try { if ('wakeLock' in navigator) S.wake = await navigator.wakeLock.request('screen'); } catch(e){}
+  return true;
+}
+
+function draw(){
+  const v = el('video'), c = el('canvas'), x = c.getContext('2d');
+  if (v.videoWidth){
+    if (c.width !== v.videoWidth || c.height !== v.videoHeight){ c.width = v.videoWidth; c.height = v.videoHeight; }
+    x.drawImage(v, 0, 0, c.width, c.height);
+    if (S.c) stamp(x, c.width, c.height);
+  }
+  S.raf = requestAnimationFrame(draw);
+}
+
+function stamp(x, w, h){
+  const fs = Math.max(14, Math.round(Math.min(w, h) / 24));
+  const lines = [(S.c.mode === 'QC' ? 'QC OUTBOUND' : 'UNBOXING RETUR') + ' | INV ' + S.c.invoice,
+                 (S.c.sku + ' ' + S.c.desc).trim(),
+                 nowStr() + ' | ' + SITE + ' | ' + S.operator];
+  const p = Math.round(fs * 0.5), lh = Math.round(fs * 1.25), bh = lines.length * lh + p * 2;
+  x.fillStyle = 'rgba(0,0,0,.55)'; x.fillRect(0, h - bh, w, bh);
+  x.font = 'bold ' + fs + 'px sans-serif'; x.fillStyle = '#fff'; x.textBaseline = 'top';
+  lines.forEach((l, i) => x.fillText(l, p, h - bh + p + i * lh));
+}
+
+/* ===== barcode scan ===== */
+async function scan(target){
+  if (S.scanning){ S.scanning = false; return; }
+  const btn = el('scan_' + target);
+  if (!('BarcodeDetector' in window)){ toast('Scanner tidak didukung di HP ini — ketik manual', 4000); return; }
+  if (!await openCamera()){ toast('Kamera tidak bisa dibuka'); return; }
+  let formats; try { formats = await BarcodeDetector.getSupportedFormats(); } catch(e){}
+  const det = new BarcodeDetector(formats && formats.length ? {formats} : undefined);
+  S.scanning = true; btn.textContent = '✖';
+  let lastHint = 0, prev = '';
+  while (S.scanning){
+    try {
+      const r = await det.detect(el('video'));
+      const codes = r.map(b => cleanCode(b.rawValue)).filter(Boolean);
+      const val = codes.find(c => FORMAT[target].re.test(c));
+      if (val && val === prev){            // same value read twice in a row = no misread
+        el(target).value = val; if (navigator.vibrate) navigator.vibrate(150); toast(target.toUpperCase() + ': ' + val);
+        if (target === 'sku') lookupSku();
+        break;
+      }
+      prev = val || '';
+      if (!val && codes.length && Date.now() - lastHint > 2500){
+        lastHint = Date.now();
+        toast('Barcode terbaca (' + codes[0] + ') tapi bukan format ' + FORMAT[target].hint);
+      }
+    } catch(e){}
+    await sleep(200);
+  }
+  S.scanning = false; btn.textContent = '📷';
+}
+
+/* ===== SKU → description from Master_SKU ===== */
+let skuReq = 0;
+async function lookupSku(){
+  const sku = cleanCode(el('sku').value), d = el('desc'), info = el('descInfo');
+  d.value = ''; d.readOnly = true; info.textContent = ''; info.style.color = '';
+  if (!sku) return;
+  const my = ++skuReq;
+  info.textContent = 'Mencari di Master_SKU…';
+  try {
+    const r = await api('sku', {sku});
+    if (my !== skuReq) return;               // a newer SKU was entered meanwhile
+    if (r.desc){ d.value = r.desc; info.textContent = '✔ dari Master_SKU'; info.style.color = 'var(--ok)'; }
+    else { d.readOnly = false; d.placeholder = 'Ketik deskripsi manual'; info.textContent = 'SKU tidak ada di Master_SKU — isi manual'; info.style.color = 'var(--warn)'; d.focus(); }
+  } catch(e){
+    if (my !== skuReq) return;
+    d.readOnly = false; info.textContent = 'Gagal cek Master_SKU — isi manual'; info.style.color = 'var(--bad)';
+  }
+}
+
+/* ===== case flow ===== */
+async function startCase(){
+  if (S.c) return;
+  const invoice = cleanCode(el('inv').value), sku = cleanCode(el('sku').value), desc = el('desc').value.trim();
+  if (!invoice){ toast('Isi / scan nomor invoice dulu'); return; }
+  if (!sku){ toast('Isi / scan SKU dulu'); return; }
+  const odd = [];
+  if (!FORMAT.inv.re.test(invoice)) odd.push('Invoice "' + invoice + '" (biasanya ' + FORMAT.inv.hint + ')');
+  if (!FORMAT.sku.re.test(sku))     odd.push('SKU "' + sku + '" (biasanya ' + FORMAT.sku.hint + ')');
+  const key = invoice + '|' + sku;
+  if (odd.length && S.okOdd !== key){
+    S.okOdd = key;
+    toast('Format tidak biasa: ' + odd.join(', ') + '. Tekan Mulai lagi jika memang benar.', 6000);
+    return;
+  }
+  S.scanning = false; el('btnStart').disabled = true;
+  try {
+    const r = await api('start', {invoice, sku, desc, mode: S.mode, operator: S.operator});
+    S.c = r; S.photos = 0; S.videos = 0;
+    el('caseTitle').textContent = (r.mode === 'QC' ? 'QC Outbound' : 'Unboxing Retur');
+    el('caseInfo').textContent = r.name;
+    el('folderLink').href = r.folderUrl;
+    el('stepSetup').classList.add('hide'); el('stepCase').classList.remove('hide');
+    const ok = await openCamera();
+    el('liveCtl').classList.toggle('hide', !ok); el('fallbackCtl').classList.toggle('hide', ok);
+    if (r.mode === 'RETUR') toast('Retur: mulai rekam SEBELUM paket dibuka, rekam tanpa putus', 5000);
+  } catch(e){ toast('Gagal mulai: ' + e.message, 5000); }
+  el('btnStart').disabled = false;
+}
+
+function fname(tag, ext){ return S.c.name + '_' + tag + '.' + ext; }
+
+function takePhoto(){
+  if (!S.c) return;
+  const c = el('canvas'); if (!c.width){ toast('Kamera belum siap'); return; }
+  c.toBlob(b => {
+    if (!b || !S.c) return;
+    S.photos++;
+    const u = new Uploader(fname('P' + S.photos, 'jpg'), 'image/jpeg');
+    u.push(b); u.finish();
+    el('cam').style.opacity = .3; setTimeout(() => el('cam').style.opacity = 1, 120);
+  }, 'image/jpeg', 0.88);
+}
+
+function pickMime(){
+  const list = ['video/mp4;codecs=avc1,mp4a', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+  for (const m of list){ try { if (MediaRecorder.isTypeSupported(m)) return m; } catch(e){} }
+  return '';
+}
+function toggleRec(){ S.rec ? stopRec() : startRec(); }
+
+function startRec(){
+  if (!S.c || !S.stream) return;
+  if (!window.MediaRecorder){ toast('Perekam video tidak didukung'); return; }
+  const cs = el('canvas').captureStream(FPS);
+  const tracks = cs.getVideoTracks().concat(S.stream.getAudioTracks());
+  const mime = pickMime();
+  const base = mime ? mime.split(';')[0] : 'video/webm';
+  const ext = base === 'video/mp4' ? 'mp4' : 'webm';
+  let rec;
+  try { rec = new MediaRecorder(new MediaStream(tracks), mime ? {mimeType:mime, videoBitsPerSecond:BITRATE} : {videoBitsPerSecond:BITRATE}); }
+  catch(e){ toast('Gagal merekam: ' + e.message); return; }
+  S.videos++;
+  const u = new Uploader(fname('V' + S.videos, ext), base);
+  rec.ondataavailable = e => { if (e.data && e.data.size) u.push(e.data); };
+  rec.onstop = () => { u.finish(); cs.getTracks().forEach(t => t.stop()); };
+  rec.start(1000);  // hand a piece to the uploader every second
+  S.rec = rec; S.recStart = Date.now();
+  el('btnRec').textContent = '⏹ Stop'; el('recDot').style.display = 'block'; el('btnFinish').disabled = true;
+  S.recTimer = setInterval(() => {
+    const s = Math.floor((Date.now() - S.recStart) / 1000);
+    el('recDot').textContent = '● REC ' + pad(Math.floor(s / 60)) + ':' + pad(s % 60);
+  }, 500);
+}
+
+function stopRec(){
+  if (!S.rec) return;
+  S.rec.stop(); S.rec = null; clearInterval(S.recTimer);
+  el('btnRec').textContent = '⏺ Rekam'; el('recDot').style.display = 'none'; el('btnFinish').disabled = false;
+}
+
+function nativeFile(inp, kind){
+  const f = inp.files && inp.files[0]; inp.value = '';
+  if (!f || !S.c) return;
+  const ext = (f.name.split('.').pop() || (kind === 'P' ? 'jpg' : 'mp4')).toLowerCase();
+  const n = kind === 'P' ? ++S.photos : ++S.videos;
+  const u = new Uploader(fname(kind + n, ext), f.type || (kind === 'P' ? 'image/jpeg' : 'video/mp4'));
+  u.push(f); u.finish();
+}
+
+async function finishCase(){
+  if (!S.c || S.rec) return;
+  const c = S.c;
+  el('btnFinish').disabled = true; el('btnFinish').textContent = 'Menunggu upload selesai…';
+  const mine = S.uploaders.filter(u => u.c === c);
+  await Promise.all(mine.map(u => u.chain));
+  const failed = mine.filter(u => u.failed).length;
+  const status = failed ? ('GAGAL ' + failed + ' FILE') : (mine.length ? 'OK' : 'KOSONG');
+  try { await api('finish', {row: c.row, invoice: c.invoice, photos: S.photos, videos: S.videos, status}); }
+  catch(e){ toast('Log gagal: ' + e.message, 5000); }
+  toast(failed ? (failed + ' file gagal upload — tekan "Simpan backup"!') : 'Selesai ✔ ' + c.invoice, 5000);
+  S.c = null; S.okOdd = '';
+  el('inv').value = ''; el('sku').value = ''; el('desc').value = '';
+  el('desc').readOnly = true; el('desc').placeholder = 'Otomatis dari Master_SKU'; el('descInfo').textContent = '';
+  el('stepCase').classList.add('hide'); el('stepSetup').classList.remove('hide');
+  el('btnFinish').disabled = false; el('btnFinish').textContent = '✅ Selesai';
+}
+
+/* ===== uploader =====
+ * Apps Script opens a resumable upload session in the case folder.
+ * The phone then sends the file in 5 MB pieces straight to Google Drive.
+ * If the browser is not allowed to talk to Drive directly, it switches
+ * automatically to sending the pieces through Apps Script.
+ */
+function xhrPut(url, body, range, onProg){
+  return new Promise((res, rej) => {
+    const x = new XMLHttpRequest();
+    x.open('PUT', url, true);
+    x.setRequestHeader('Content-Range', range);
+    x.timeout = 180000;
+    if (onProg) x.upload.onprogress = e => onProg(e.loaded);
+    x.onload = () => res(x);
+    x.onerror = () => rej(new Error('Jaringan putus'));
+    x.ontimeout = () => rej(new Error('Timeout'));
+    x.send(body);
+  });
+}
+
+function toBase64(blob){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => res(String(fr.result).split(',')[1] || '');
+    fr.onerror = () => rej(fr.error);
+    fr.readAsDataURL(blob);
+  });
+}
+
+function showUpMode(){ el('upMode').textContent = S.proxy ? '(via Apps Script)' : (S.directOk ? '(langsung ke Drive)' : ''); }
+
+class Uploader {
+  constructor(name, mime){
+    this.name = name; this.mime = mime; this.c = S.c;
+    this.buf = []; this.bufSize = 0; this.offset = 0; this.sent = 0; this.total = 0;
+    this.parts = []; this.url = null; this.done = false; this.failed = false; this.closed = false; this.retrying = false;
+    this.row = addUpRow(name);
+    S.uploaders.push(this);
+    this.chain = this._retry(() => this._init());
+  }
+  push(blob){
+    if (this.closed) return;
+    this.parts.push(blob); this.buf.push(blob); this.bufSize += blob.size; this.total += blob.size;
+    while (this.bufSize >= CHUNK){
+      const all = new Blob(this.buf);
+      const rest = all.slice(CHUNK);
+      this._queue(all.slice(0, CHUNK), false);
+      this.buf = [rest]; this.bufSize = rest.size;
+    }
+    this._ui();
+  }
+  finish(){
+    if (this.closed) return this.chain;
+    this.closed = true;
+    const rest = new Blob(this.buf); this.buf = []; this.bufSize = 0;
+    this._queue(rest, true);
+    this.chain = this.chain.then(() => { if (!this.failed){ this.done = true; this.parts = []; } this._ui(); });
+    return this.chain;
+  }
+  _queue(chunk, last){
+    this.chain = this.chain.then(() => { if (!this.failed) return this._retry(() => this._put(chunk, last)); });
+  }
+  async _retry(fn){
+    for (let i = 0; i < 8; i++){
+      try { return await fn(); }
+      catch(e){
+        console.warn(this.name, e); this.err = e.message; this.retrying = true; this._ui();
+        await sleep(Math.min(30000, 1500 * Math.pow(2, i)));
+      }
+    }
+    this.failed = true; this._ui();
+  }
+  async _init(){
+    const r = await api('session', {folderId: this.c.folderId, sig: this.c.sig, name: this.name, mime: this.mime, origin: location.origin});
+    this.url = r.url; this.retrying = false;
+  }
+  // one PUT to the upload session, directly or via Apps Script; returns {status, range}
+  async _send(body, range, onProg){
+    if (!S.proxy){
+      try {
+        const x = await xhrPut(this.url, body, range, onProg);
+        if (!S.directOk){ S.directOk = true; showUpMode(); }
+        return {status: x.status, range: x.getResponseHeader('Range') || ''};
+      } catch(e){
+        if (S.directOk || !navigator.onLine) throw e;
+        S.proxy = true; showUpMode();   // direct route blocked → use Apps Script from now on
+        throw new Error('Pindah ke jalur Apps Script');
+      }
+    }
+    const data = body && body.size ? await toBase64(body) : '';
+    const r = await api('chunk', {url: this.url, data, range});
+    if (onProg && body) onProg(body.size);
+    return r;
+  }
+  async _status(){  // how many bytes Drive already has (null = unknown)
+    try {
+      const r = await this._send(null, 'bytes */*');
+      if (r.status === 200 || r.status === 201) return Infinity;
+      if (r.status === 308){ const m = String(r.range).match(/bytes=0-(\d+)/); return m ? Number(m[1]) + 1 : 0; }
+    } catch(e){}
+    return null;
+  }
+  async _put(chunk, last){
+    let start = this.offset, body = chunk;
+    if (this.retrying){
+      const got = await this._status();
+      if (got !== null && got > start){
+        const skip = Math.min(got - start, chunk.size);
+        body = chunk.slice(skip); start += skip;
+        if (!last && body.size === 0){ this.offset = start; this.retrying = false; return; }
+      }
+    }
+    const total = start + body.size;
+    const range = body.size === 0 ? 'bytes */' + total
+                                  : 'bytes ' + start + '-' + (total - 1) + '/' + (last ? total : '*');
+    const r = await this._send(body, range, p => { this.sent = start + p; this._ui(); });
+    if (last ? !(r.status === 200 || r.status === 201) : r.status !== 308) throw new Error('HTTP ' + r.status);
+    this.offset = total; this.sent = total; this.retrying = false; this._ui();
+  }
+  _ui(){
+    const s = this.row.querySelector('.s');
+    if (this.done){ s.textContent = '✔ ' + mb(this.total); s.className = 's st-ok'; }
+    else if (this.failed){
+      if (s.dataset.f) return;
+      s.dataset.f = 1; s.className = 's st-bad'; s.textContent = '';
+      const b = document.createElement('button'); b.textContent = '✖ Simpan backup'; b.style.padding = '6px 10px';
+      b.onclick = () => this.backup(); s.appendChild(b);
+    } else {
+      s.className = 's st-run';
+      s.textContent = mb(this.sent) + ' / ' + mb(this.total) + (this.closed ? '' : ' ●') + (this.retrying ? ' (coba ulang)' : '');
+    }
+  }
+  backup(){
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(this.parts, {type: this.mime}));
+    a.download = this.name; document.body.appendChild(a); a.click(); a.remove();
+  }
+}
+
+function addUpRow(name){
+  const box = el('ups');
+  if (!box.dataset.used){ box.innerHTML = ''; box.dataset.used = 1; }
+  const d = document.createElement('div'); d.className = 'up';
+  d.innerHTML = '<span></span><span class="s"></span>'; d.firstChild.textContent = name;
+  box.prepend(d);
+  while (box.children.length > 40) box.lastChild.remove();
+  return d;
+}
+
+/* ===== search ===== */
+async function find(){
+  const q = el('q').value.trim(); if (q.length < 3){ toast('Minimal 3 karakter'); return; }
+  const out = el('results');
+  out.innerHTML = '<div class="card">Mencari…</div>';
+  try {
+    const rows = await api('search', {q});
+    if (!rows.length){ out.innerHTML = '<div class="card">Tidak ditemukan.</div>'; return; }
+    const card = document.createElement('div'); card.className = 'card';
+    rows.forEach(r => {
+      const d = document.createElement('div'); d.className = 'res';
+      d.innerHTML = '<b></b> · <span></span><br><small></small>' +
+        '<div class="row" style="margin-top:6px;align-items:center"><a target="_blank" rel="noopener">Buka folder</a><button style="padding:8px">🔗 Link share</button></div>' +
+        '<input type="text" readonly class="hide">';
+      d.querySelector('b').textContent = r.name;
+      d.querySelector('span').textContent = r.mode;
+      d.querySelector('small').textContent = r.time + ' · ' + r.user + ' · ' + r.photos + ' foto, ' + r.videos + ' video · ' + r.status;
+      d.querySelector('a').href = r.url;
+      d.querySelector('button').onclick = () => share(r.folderId, r.sig, d.querySelector('input'));
+      card.appendChild(d);
+    });
+    out.innerHTML = ''; out.appendChild(card);
+  } catch(e){ out.innerHTML = ''; toast('Gagal: ' + e.message); }
+}
+
+async function share(id, sig, box){
+  try {
+    const r = await api('share', {folderId: id, sig});
+    box.value = r.url; box.classList.remove('hide'); box.select();
+    try { await navigator.clipboard.writeText(r.url); } catch(e){}
+    toast(r.public ? 'Link publik siap & sudah dicopy' : 'Link hanya untuk internal — sharing publik diblokir pengaturan Drive', 5000);
+  } catch(e){ toast('Gagal: ' + e.message); }
+}
+</script>
+</body>
+</html>
